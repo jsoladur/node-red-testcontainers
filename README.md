@@ -55,7 +55,7 @@ Simply put the dependency coordinates to your `pom.xml` (or something similar, i
 
 MIT License
 
-Copyright (c) 2019-2021 Niko Köbler
+Copyright (c) 2022 José María Sola Durán
 
 See [LICENSE](LICENSE) file for details.
 
