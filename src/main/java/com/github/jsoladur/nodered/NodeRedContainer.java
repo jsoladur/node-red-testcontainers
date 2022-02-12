@@ -1,10 +1,15 @@
 package com.github.jsoladur.nodered;
 
+import lombok.SneakyThrows;
+import org.apache.commons.compress.utils.IOUtils;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.images.builder.Transferable;
 import org.testcontainers.utility.DockerImageName;
 
+import java.io.File;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
 
 public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
@@ -13,8 +18,9 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
     private static final String DEFAULT_NODE_RED_DOCKER_IMAGE_VERSION = "2.2.0";
     private static final DockerImageName DEFAULT_DOCKER_IMAGE_NAME = DockerImageName.parse(DEFAULT_NODE_RED_DOCKER_IMAGE_BASE_NAME + ":" + DEFAULT_NODE_RED_DOCKER_IMAGE_VERSION);
     private static final int DEFAULT_HTTP_EXPOSED_PORT = 1880;
-    private static final List<Integer> ALL_EXPOSED_PORTS = List.of(DEFAULT_HTTP_EXPOSED_PORT);
+    private static final List<Integer> ALL_EXPOSED_PORTS = Arrays.asList(DEFAULT_HTTP_EXPOSED_PORT);
     private static final Duration DEFAULT_STARTUP_TIMEOUT = Duration.ofMinutes(1);
+    private static final String CUSTOM_FLOWS_JSON_FILE_NAME = "node-red-testcontainers_flows.json";
 
     private static final class Env {
         private static final String NODE_RED_CREDENTIAL_SECRET = "NODE_RED_CREDENTIAL_SECRET";
@@ -39,7 +45,7 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
             throw new IllegalArgumentException(String.format("%1$s isn't compatible with %2$s", dockerImageName.asCanonicalNameString(),
                     DEFAULT_DOCKER_IMAGE_NAME.asCanonicalNameString()));
         }
-        withExposedPorts(ALL_EXPOSED_PORTS.toArray(Integer[]::new));
+        withExposedPorts(ALL_EXPOSED_PORTS.stream().toArray(Integer[]::new));
         // FIXME
     }
 
@@ -68,6 +74,10 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
         return self();
     }
 
+    public String getNodeRedUrl() {
+        return String.format("http://%1$2s:%2$2s", getContainerIpAddress(), getMappedPort(DEFAULT_HTTP_EXPOSED_PORT));
+    }
+
     @Override
     public NodeRedContainer withCommand(String cmd) {
         this.printLoggerWarnDisableFeature();
@@ -81,8 +91,8 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
     }
 
     @Override
+    @SneakyThrows
     protected void configure() {
-        super.configure();
         setWaitStrategy(Wait
                 .forHttp("/")
                 .forPort(DEFAULT_HTTP_EXPOSED_PORT)
@@ -90,7 +100,11 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
         );
         withEnv(Env.NODE_RED_DISABLE_EDITOR, String.valueOf(this.disableEditor));
         if (this.flowsJson != null && !this.flowsJson.isBlank()) {
-            // FIXME: To be implemented!
+            withEnv(Env.FLOWS, CUSTOM_FLOWS_JSON_FILE_NAME);
+            // FIXME: Copy FLOWS json
+            // try(final var is = this.getClass().getClassLoader().getResourceAsStream(this.flowsJson)){
+            //    copyFileToContainer(Transferable.of(IOUtils.toByteArray(is)), "/data/" + CUSTOM_FLOWS_JSON_FILE_NAME);
+            // }
         }
         if (this.nodeRedCredentialSecret != null && !this.nodeRedCredentialSecret.isBlank()) {
             withEnv(Env.NODE_RED_CREDENTIAL_SECRET, this.nodeRedCredentialSecret);
