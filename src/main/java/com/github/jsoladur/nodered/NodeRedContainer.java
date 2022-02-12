@@ -12,7 +12,7 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 
-public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
+public final class NodeRedContainer extends GenericContainer<NodeRedContainer> {
 
     private static final String DEFAULT_NODE_RED_DOCKER_IMAGE_BASE_NAME = "nodered/node-red";
     private static final String DEFAULT_NODE_RED_DOCKER_IMAGE_VERSION = "2.2.0";
@@ -52,6 +52,10 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
     public NodeRedContainer withFlowsJson(String flowsJson) {
         this.flowsJson = flowsJson;
         return self();
+    }
+
+    public boolean hasFlowsJson() {
+        return this.flowsJson != null && !this.flowsJson.isBlank();
     }
 
     public NodeRedContainer withDisableEditor(boolean disableEditor) {
@@ -99,12 +103,8 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
                 .withStartupTimeout(startupTimeout)
         );
         withEnv(Env.NODE_RED_DISABLE_EDITOR, String.valueOf(this.disableEditor));
-        if (this.flowsJson != null && !this.flowsJson.isBlank()) {
+        if (this.hasFlowsJson()) {
             withEnv(Env.FLOWS, CUSTOM_FLOWS_JSON_FILE_NAME);
-            // FIXME: Copy FLOWS json
-            // try(final var is = this.getClass().getClassLoader().getResourceAsStream(this.flowsJson)){
-            //    copyFileToContainer(Transferable.of(IOUtils.toByteArray(is)), "/data/" + CUSTOM_FLOWS_JSON_FILE_NAME);
-            // }
         }
         if (this.nodeRedCredentialSecret != null && !this.nodeRedCredentialSecret.isBlank()) {
             withEnv(Env.NODE_RED_CREDENTIAL_SECRET, this.nodeRedCredentialSecret);
@@ -115,9 +115,18 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
         // FIXME: To be implemented!
     }
 
+    @Override
+    @SneakyThrows
+    protected void containerIsCreated(String containerId) {
+        if (this.hasFlowsJson()) {
+            try(final var is = this.getClass().getClassLoader().getResourceAsStream(this.flowsJson)){
+                copyFileToContainer(Transferable.of(IOUtils.toByteArray(is)), "/data/" + CUSTOM_FLOWS_JSON_FILE_NAME);
+            }
+        }
+        logger().debug("Finish copy flows.json");
+    }
+
     private void printLoggerWarnDisableFeature() {
         logger().warn("This feature is disabled in " + this.getClass().getName());
     }
-
-
 }

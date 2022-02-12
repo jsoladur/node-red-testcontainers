@@ -7,8 +7,49 @@
   <groupId>com.github.jsoladur</groupId>
   <artifactId>node-red-testcontainers</artifactId>
   <version>0.1.0-SNAPSHOT</version>
-  <name>node-red-testcontainers</name>
+
+  <name>NODE-RED Testcontainers</name>
+  <description>A Testcontainers implementation for NODE-RED.</description>
   <url>https://github.com/jsoladur/node-red-testcontainers</url>
+
+  <developers>
+    <developer>
+      <id>jsoladur</id>
+      <name>José María Sola Durán</name>
+      <email>josemaria.sola.duran@gmail.com</email>
+      <url>https://github.com/jsoladur</url>
+    </developer>
+  </developers>
+
+  <licenses>
+    <license>
+      <name>MIT</name>
+      <url>https://opensource.org/licenses/MIT</url>
+    </license>
+  </licenses>
+
+  <scm>
+    <url>https://github.com/jsoladur/node-red-testcontainers</url>
+    <connection>scm:git:git@github.com:jsoladur/node-red-testcontainers.git</connection>
+    <developerConnection>scm:git:git@github.com:jsoladur/node-red-testcontainers.git</developerConnection>
+    <tag>HEAD</tag>
+  </scm>
+
+  <issueManagement>
+    <system>GitHub Issues</system>
+    <url>https://github.com/jsoladur/node-red-testcontainers/issues</url>
+  </issueManagement>
+
+  <distributionManagement>
+    <snapshotRepository>
+      <id>ossrh</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    </snapshotRepository>
+    <repository>
+      <id>ossrh</id>
+      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+    </repository>
+  </distributionManagement>
 
   <properties>
     <!-- BOMs -->
@@ -17,6 +58,8 @@
     <!-- Dependencies -->
     <jackson-databind.version>2.13.1</jackson-databind.version>
     <lombok.version>1.18.22</lombok.version>
+    <logback-classic.version>1.2.10</logback-classic.version>
+    <okhttp.version>2.7.5</okhttp.version>
     <!-- Plugins -->
     <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
     <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
@@ -76,6 +119,19 @@
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <version>${logback-classic.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.squareup.okhttp</groupId>
+      <artifactId>okhttp</artifactId>
+      <version>${okhttp.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
