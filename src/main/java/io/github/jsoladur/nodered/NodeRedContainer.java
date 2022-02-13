@@ -3,6 +3,7 @@ package io.github.jsoladur.nodered;
 import lombok.SneakyThrows;
 import org.apache.commons.compress.utils.IOUtils;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.images.builder.Transferable;
 import org.testcontainers.utility.DockerImageName;
@@ -11,10 +12,13 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 
-public final class NodeRedContainer extends GenericContainer<NodeRedContainer> {
+/**
+ * @author José María Sola Durán, https://github.com/jsoladur, @jsoladur
+ */
+public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
 
     private static final String DEFAULT_NODE_RED_DOCKER_IMAGE_BASE_NAME = "nodered/node-red";
-    private static final String DEFAULT_NODE_RED_DOCKER_IMAGE_VERSION = "2.2.0";
+    private static final String DEFAULT_NODE_RED_DOCKER_IMAGE_VERSION = "latest";
     private static final DockerImageName DEFAULT_DOCKER_IMAGE_NAME = DockerImageName.parse(DEFAULT_NODE_RED_DOCKER_IMAGE_BASE_NAME + ":" + DEFAULT_NODE_RED_DOCKER_IMAGE_VERSION);
     private static final int DEFAULT_HTTP_EXPOSED_PORT = 1880;
     private static final List<Integer> ALL_EXPOSED_PORTS = Arrays.asList(DEFAULT_HTTP_EXPOSED_PORT);
@@ -34,10 +38,19 @@ public final class NodeRedContainer extends GenericContainer<NodeRedContainer> {
     private String nodeOptions;
     private Duration startupTimeout = DEFAULT_STARTUP_TIMEOUT;
 
+    /**
+     * <p>Create NodeRedContainer with <a href="https://hub.docker.com/r/nodered/node-red/">nodered/node-red:latest</a> docker image</p>
+     * @since 0.1.0
+     */
     public NodeRedContainer() {
         this(DEFAULT_DOCKER_IMAGE_NAME);
     }
 
+    /**
+     * <p>Create a NodeRedContainer by passing the full docker image name</p>
+     * @param dockerImageName Full docker image name, e.g. nodered/node-red:2.2.0
+     * @since 0.1.0
+     */
     public NodeRedContainer(DockerImageName dockerImageName) {
         super(dockerImageName);
         if (!dockerImageName.isCompatibleWith(DEFAULT_DOCKER_IMAGE_NAME)) {
@@ -45,38 +58,74 @@ public final class NodeRedContainer extends GenericContainer<NodeRedContainer> {
                     DEFAULT_DOCKER_IMAGE_NAME.asCanonicalNameString()));
         }
         withExposedPorts(ALL_EXPOSED_PORTS.stream().toArray(Integer[]::new));
-        // FIXME
+        withLogConsumer(new Slf4jLogConsumer(logger()));
     }
 
+    /**
+     * flows configuration file to run in NODE-RED container instance
+     * @param flowsJson flows configuration file
+     * @see <a href="https://nodered.org/docs/getting-started/docker">Running NODE-RED under Docker</a>
+     * @return
+     * @since 0.1.0
+     */
     public NodeRedContainer withFlowsJson(String flowsJson) {
         this.flowsJson = flowsJson;
         return self();
     }
 
-    public boolean hasFlowsJson() {
-        return this.flowsJson != null && !this.flowsJson.isBlank();
-    }
-
+    /**
+     *
+     * @see <a href="https://nodered.org/docs/getting-started/docker">Running NODE-RED under Docker</a>
+     * @param disableEditor
+     * @return
+     * @since 0.1.0
+     */
     public NodeRedContainer withDisableEditor(boolean disableEditor) {
         this.disableEditor = disableEditor;
         return self();
     }
 
+    /**
+     *
+     * @see <a href="https://nodered.org/docs/getting-started/docker">Running NODE-RED under Docker</a>
+     * @param nodeRedCredentialSecret
+     * @return
+     * @since 0.1.0
+     */
     public NodeRedContainer withNodeRedCredentialSecret(String nodeRedCredentialSecret) {
         this.nodeRedCredentialSecret = nodeRedCredentialSecret;
         return self();
     }
 
+    /**
+     * <p>Set value for NODE_OPTIONS env variable</p>
+     * @see <a href="https://nodered.org/docs/getting-started/docker">Running NODE-RED under Docker</a>
+     * @param nodeOptions
+     * @return
+     * @since 0.1.0
+     */
     public NodeRedContainer withNodeOptions(String nodeOptions) {
         this.nodeOptions = nodeOptions;
         return self();
     }
 
+    /**
+     * <p>Set startup timeout to wait that the container start</p>
+     * <p>By default, the value is 1 minute</p>
+     * @param startupTimeout
+     * @return
+     * @since 0.1.0
+     */
     public NodeRedContainer withStartupTimeout(Duration startupTimeout) {
         this.startupTimeout = startupTimeout;
         return self();
     }
 
+    /**
+     * NODE-RED instance URL, e.g http://localhost:51134
+     * @return Base URL to access to NODE-RED instance
+     * @since 0.1.0
+     */
     public String getNodeRedUrl() {
         return String.format("http://%1$2s:%2$2s", getContainerIpAddress(), getMappedPort(DEFAULT_HTTP_EXPOSED_PORT));
     }
@@ -91,6 +140,10 @@ public final class NodeRedContainer extends GenericContainer<NodeRedContainer> {
     public NodeRedContainer withCommand(String... commandParts) {
         this.printLoggerWarnDisableFeature();
         return self();
+    }
+
+    protected boolean hasFlowsJson() {
+        return this.flowsJson != null && !this.flowsJson.isBlank();
     }
 
     @Override
