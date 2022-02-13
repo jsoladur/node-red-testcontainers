@@ -7,6 +7,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -27,6 +28,11 @@ class NodeRedContainerTest {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    @BeforeAll
+    static void beforeAll() {
+        log.info("NODE-RED url = {}", nodeRedContainer.getNodeRedUrl());
+    }
+
     @AfterAll
     static void afterAll() {
         nodeRedContainer.close();
@@ -35,7 +41,6 @@ class NodeRedContainerTest {
     @Test
     @SneakyThrows
     void test() {
-        log.info("NODE-RED url = {}", nodeRedContainer.getNodeRedUrl());
         final var client = new OkHttpClient.Builder().build();
         Request request = new Request.Builder()
                 .url(nodeRedContainer.getNodeRedUrl() + "/posts")

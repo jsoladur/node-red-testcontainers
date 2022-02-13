@@ -29,11 +29,9 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
         private static final String NODE_RED_CREDENTIAL_SECRET = "NODE_RED_CREDENTIAL_SECRET";
         private static final String FLOWS = "FLOWS";
         private static final String NODE_OPTIONS = "NODE_OPTIONS";
-        private static final String NODE_RED_DISABLE_EDITOR = "NODE_RED_DISABLE_EDITOR";
     }
 
     private String flowsJson;
-    private boolean disableEditor;
     private String nodeRedCredentialSecret;
     private String nodeOptions;
     private Duration startupTimeout = DEFAULT_STARTUP_TIMEOUT;
@@ -70,18 +68,6 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
      */
     public NodeRedContainer withFlowsJson(String flowsJson) {
         this.flowsJson = flowsJson;
-        return self();
-    }
-
-    /**
-     *
-     * @see <a href="https://nodered.org/docs/getting-started/docker">Running NODE-RED under Docker</a>
-     * @param disableEditor NODE_RED_DISABLE_EDITOR env variable
-     * @return self container
-     * @since 0.1.0
-     */
-    public NodeRedContainer withDisableEditor(boolean disableEditor) {
-        this.disableEditor = disableEditor;
         return self();
     }
 
@@ -157,7 +143,6 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
                 .forPort(DEFAULT_HTTP_EXPOSED_PORT)
                 .withStartupTimeout(startupTimeout)
         );
-        withEnv(Env.NODE_RED_DISABLE_EDITOR, String.valueOf(this.disableEditor));
         if (this.hasFlowsJson()) {
             withEnv(Env.FLOWS, CUSTOM_FLOWS_JSON_FILE_NAME);
         }
