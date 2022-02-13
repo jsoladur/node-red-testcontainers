@@ -152,7 +152,6 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
         if (this.nodeOptions != null && !this.nodeOptions.isBlank()) {
             withEnv(Env.NODE_OPTIONS, this.nodeOptions);
         }
-        // FIXME: To be implemented!
     }
 
     @Override
@@ -163,7 +162,6 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
                 copyFileToContainer(Transferable.of(IOUtils.toByteArray(is)), "/data/" + CUSTOM_FLOWS_JSON_FILE_NAME);
             }
         }
-        logger().debug("Finish copy flows.json");
     }
 
     private void printLoggerWarnDisableFeature() {
