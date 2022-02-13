@@ -9,7 +9,7 @@ A [Testcontainers](https://www.testcontainers.org/) implementation for [NODE-RED
 _The `@Container` annotation used here in the readme is from the JUnit 5 support of Testcontainers.
 Please refer to the Testcontainers documentation for more information._
 
-Simply spin up a default Keycloak instance:
+Simply spin up a default NODE-RED instance:
 
 ```java
 @Container
