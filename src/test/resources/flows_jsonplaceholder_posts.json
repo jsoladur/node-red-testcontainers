@@ -1,0 +1,59 @@
+[
+  {
+    "id": "f6f2187d.f17ca8",
+    "type": "tab",
+    "label": "Flow 1",
+    "disabled": false,
+    "info": ""
+  },
+  {
+    "id": "eefab428e955fa0f",
+    "type": "http in",
+    "z": "f6f2187d.f17ca8",
+    "name": "",
+    "url": "/posts",
+    "method": "get",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 190,
+    "y": 160,
+    "wires": [
+      [
+        "e1ee2ebdfab435fe"
+      ]
+    ]
+  },
+  {
+    "id": "9b55fe5796f3f3fe",
+    "type": "http response",
+    "z": "f6f2187d.f17ca8",
+    "name": "",
+    "statusCode": "",
+    "headers": {},
+    "x": 630,
+    "y": 160,
+    "wires": []
+  },
+  {
+    "id": "e1ee2ebdfab435fe",
+    "type": "http request",
+    "z": "f6f2187d.f17ca8",
+    "name": "",
+    "method": "GET",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "https://jsonplaceholder.typicode.com/posts",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "authType": "",
+    "senderr": true,
+    "x": 430,
+    "y": 160,
+    "wires": [
+      [
+        "9b55fe5796f3f3fe"
+      ]
+    ]
+  }
+]
