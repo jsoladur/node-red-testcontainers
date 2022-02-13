@@ -20,7 +20,10 @@ import java.util.List;
 class NodeRedContainerTest {
 
     @Container
-    static final NodeRedContainer nodeRedContainer = new NodeRedContainer().withFlowsJson("flows_jsonplaceholder_posts.json");
+    static final NodeRedContainer nodeRedContainer =
+            new NodeRedContainer()
+                    .withFlowsJson("flows_jsonplaceholder_posts.json")
+                    .withNodeOptions("--max-old-space-size=1024");
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 

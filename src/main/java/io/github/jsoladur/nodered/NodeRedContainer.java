@@ -65,7 +65,7 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
      * flows configuration file to run in NODE-RED container instance
      * @param flowsJson flows configuration file
      * @see <a href="https://nodered.org/docs/getting-started/docker">Running NODE-RED under Docker</a>
-     * @return
+     * @return self container
      * @since 0.1.0
      */
     public NodeRedContainer withFlowsJson(String flowsJson) {
@@ -76,8 +76,8 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
     /**
      *
      * @see <a href="https://nodered.org/docs/getting-started/docker">Running NODE-RED under Docker</a>
-     * @param disableEditor
-     * @return
+     * @param disableEditor NODE_RED_DISABLE_EDITOR env variable
+     * @return self container
      * @since 0.1.0
      */
     public NodeRedContainer withDisableEditor(boolean disableEditor) {
@@ -88,8 +88,8 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
     /**
      *
      * @see <a href="https://nodered.org/docs/getting-started/docker">Running NODE-RED under Docker</a>
-     * @param nodeRedCredentialSecret
-     * @return
+     * @param nodeRedCredentialSecret NODE_RED_CREDENTIAL_SECRET env variable
+     * @return self container
      * @since 0.1.0
      */
     public NodeRedContainer withNodeRedCredentialSecret(String nodeRedCredentialSecret) {
@@ -100,8 +100,8 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
     /**
      * <p>Set value for NODE_OPTIONS env variable</p>
      * @see <a href="https://nodered.org/docs/getting-started/docker">Running NODE-RED under Docker</a>
-     * @param nodeOptions
-     * @return
+     * @param nodeOptions NODE_OPTIONS env variable
+     * @return self container
      * @since 0.1.0
      */
     public NodeRedContainer withNodeOptions(String nodeOptions) {
@@ -112,8 +112,8 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
     /**
      * <p>Set startup timeout to wait that the container start</p>
      * <p>By default, the value is 1 minute</p>
-     * @param startupTimeout
-     * @return
+     * @param startupTimeout startup timeout
+     * @return self container
      * @since 0.1.0
      */
     public NodeRedContainer withStartupTimeout(Duration startupTimeout) {
@@ -142,6 +142,9 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
         return self();
     }
 
+    /**
+     * @return true if flows configuration file was set. Otherwise false
+     */
     protected boolean hasFlowsJson() {
         return this.flowsJson != null && !this.flowsJson.isBlank();
     }
