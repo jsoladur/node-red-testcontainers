@@ -1,4 +1,4 @@
-package com.github.jsoladur.nodered;
+package io.github.jsoladur.nodered;
 
 import lombok.SneakyThrows;
 import org.apache.commons.compress.utils.IOUtils;
@@ -7,7 +7,6 @@ import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.images.builder.Transferable;
 import org.testcontainers.utility.DockerImageName;
 
-import java.io.File;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;

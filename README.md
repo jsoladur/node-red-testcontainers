@@ -35,16 +35,16 @@ You can obtain several properties form the NODE-RED container:
 ```java
 String endpoint = nodeRedContainer.getNodeRedUrl();
 ```
-See also [`KeycloakContainerTest`](./src/test/java/com/github/jsoladur/nodered/NodeRedContainerTest.java) class.
+See also [`NodeRedContainerTest`](./src/test/java/io/github/jsoladur/nodered/NodeRedContainerTest.java) class.
 
 ## Installation
 
-The release versions of this project are available at [Maven Central](https://search.maven.org/artifact/com.github.dasniko/testcontainers-keycloak).
+The release versions of this project are available at [Maven Central](https://search.maven.org/artifact/io.github.jsoladur/node-red-testcontainers).
 Simply put the dependency coordinates to your `pom.xml` (or something similar, if you use e.g. Gradle or something else):
 
 ```xml
 <dependency>
-  <groupId>com.github.jsoladur</groupId>
+  <groupId>io.github.jsoladur</groupId>
   <artifactId>node-red-testcontainers</artifactId>
   <version>${node-red-testcontainers.version}</version>
   <scope>test</scope>

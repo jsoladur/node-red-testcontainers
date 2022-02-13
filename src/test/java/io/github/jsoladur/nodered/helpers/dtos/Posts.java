@@ -1,4 +1,4 @@
-package com.github.jsoladur.nodered.helpers.dtos;
+package io.github.jsoladur.nodered.helpers.dtos;
 
 import lombok.Getter;
 import lombok.Setter;

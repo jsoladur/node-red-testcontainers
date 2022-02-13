@@ -1,9 +1,8 @@
-package com.github.jsoladur.nodered;
+package io.github.jsoladur.nodered;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.jsoladur.nodered.helpers.dtos.Posts;
-import com.squareup.okhttp.Call;
+import io.github.jsoladur.nodered.helpers.dtos.Posts;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterAll;
@@ -14,10 +13,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.shaded.okhttp3.OkHttpClient;
 import org.testcontainers.shaded.okhttp3.Request;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.util.List;
 
 @Slf4j
