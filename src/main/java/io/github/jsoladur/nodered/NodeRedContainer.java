@@ -9,7 +9,6 @@ import org.testcontainers.images.builder.Transferable;
 import org.testcontainers.utility.DockerImageName;
 
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -21,17 +20,21 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
     private static final String DEFAULT_NODE_RED_DOCKER_IMAGE_VERSION = "latest";
     private static final DockerImageName DEFAULT_DOCKER_IMAGE_NAME = DockerImageName.parse(DEFAULT_NODE_RED_DOCKER_IMAGE_BASE_NAME + ":" + DEFAULT_NODE_RED_DOCKER_IMAGE_VERSION);
     private static final int DEFAULT_HTTP_EXPOSED_PORT = 1880;
-    private static final List<Integer> ALL_EXPOSED_PORTS = Arrays.asList(DEFAULT_HTTP_EXPOSED_PORT);
+    private static final List<Integer> ALL_EXPOSED_PORTS = List.of(DEFAULT_HTTP_EXPOSED_PORT);
     private static final Duration DEFAULT_STARTUP_TIMEOUT = Duration.ofMinutes(1);
-    private static final String CUSTOM_FLOWS_JSON_FILE_NAME = "node-red-testcontainers_flows.json";
+    private static final String FLOWS_JSON_FILE_NAME = "flows.json";
+    private static final String FLOWS_CRED_JSON_FILE_NAME = "flows_cred.json";
+
+    //TODO: Think about how code this feature (Nashorn¿?)...
+    private static final String SETTINGS_JS_FILE_NAME = "settings.js";
 
     private static final class Env {
         private static final String NODE_RED_CREDENTIAL_SECRET = "NODE_RED_CREDENTIAL_SECRET";
-        private static final String FLOWS = "FLOWS";
         private static final String NODE_OPTIONS = "NODE_OPTIONS";
     }
 
     private String flowsJson;
+    private String flowsCredJson;
     private String nodeRedCredentialSecret;
     private String nodeOptions;
     private Duration startupTimeout = DEFAULT_STARTUP_TIMEOUT;
@@ -55,7 +58,7 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
             throw new IllegalArgumentException(String.format("%1$s isn't compatible with %2$s", dockerImageName.asCanonicalNameString(),
                     DEFAULT_DOCKER_IMAGE_NAME.asCanonicalNameString()));
         }
-        withExposedPorts(ALL_EXPOSED_PORTS.stream().toArray(Integer[]::new));
+        withExposedPorts(ALL_EXPOSED_PORTS.toArray(Integer[]::new));
         withLogConsumer(new Slf4jLogConsumer(logger()));
     }
 
@@ -68,6 +71,18 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
      */
     public NodeRedContainer withFlowsJson(String flowsJson) {
         this.flowsJson = flowsJson;
+        return self();
+    }
+
+    /**
+     * flows crendentials configuration file (flows_cred.json) to run in NODE-RED container instance
+     * @param flowsCred flows crendentials configuration file (flows_cred.json)
+     * @see <a href="https://nodered.org/docs/getting-started/docker">Running NODE-RED under Docker</a>
+     * @return self container
+     * @since 0.2.0
+     */
+    public NodeRedContainer withFlowsCred(String flowsCred) {
+        this.flowsCredJson = flowsCred;
         return self();
     }
 
@@ -135,6 +150,13 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
         return this.flowsJson != null && !this.flowsJson.isBlank();
     }
 
+    /**
+     * @return true if flows crendentials configuration file (flows_cred.json) file was set. Otherwise false
+     */
+    protected boolean hasFlowsCredJson() {
+        return this.flowsCredJson != null && !this.flowsCredJson.isBlank();
+    }
+
     @Override
     @SneakyThrows
     protected void configure() {
@@ -143,9 +165,6 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
                 .forPort(DEFAULT_HTTP_EXPOSED_PORT)
                 .withStartupTimeout(startupTimeout)
         );
-        if (this.hasFlowsJson()) {
-            withEnv(Env.FLOWS, CUSTOM_FLOWS_JSON_FILE_NAME);
-        }
         if (this.nodeRedCredentialSecret != null && !this.nodeRedCredentialSecret.isBlank()) {
             withEnv(Env.NODE_RED_CREDENTIAL_SECRET, this.nodeRedCredentialSecret);
         }
@@ -159,7 +178,12 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
     protected void containerIsCreated(String containerId) {
         if (this.hasFlowsJson()) {
             try(final var is = this.getClass().getClassLoader().getResourceAsStream(this.flowsJson)){
-                copyFileToContainer(Transferable.of(IOUtils.toByteArray(is)), "/data/" + CUSTOM_FLOWS_JSON_FILE_NAME);
+                copyFileToContainer(Transferable.of(IOUtils.toByteArray(is)), "/data/" + FLOWS_JSON_FILE_NAME);
+            }
+        }
+        if (this.hasFlowsCredJson()) {
+            try(final var is = this.getClass().getClassLoader().getResourceAsStream(this.flowsCredJson)){
+                copyFileToContainer(Transferable.of(IOUtils.toByteArray(is)), "/data/" + FLOWS_CRED_JSON_FILE_NAME);
             }
         }
     }
