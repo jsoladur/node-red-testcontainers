@@ -3,6 +3,7 @@
 A [Testcontainers](https://www.testcontainers.org/) implementation for [NODE-RED](https://nodered.org/).
 
 ![](https://img.shields.io/github/license/jsoladur/node-red-testcontainers?label=License)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.jsoladur/node-red-testcontainers.svg?label=Maven%20Central)](https://search.maven.org/artifact/io.github.jsoladur/node-red-testcontainers)
 
 ## Getting Started
 
@@ -23,11 +24,14 @@ Use another NODE-RED Docker image/version than used in this Testcontainers:
 static final  NodeRedContainer nodeRedContainer = new NodeRedContainer("nodered/node-red:2.1.0");
 ```
 
-Power up a NODE-RED instance with one ore more existing `flows.json` file (from classpath):
+Power up a NODE-RED instance with existing `flows.json` and `flows_cred.json` file (from classpath):
 
 ```java
 @Container
-static final NodeRedContainer nodeRedContainer = new NodeRedContainer().withFlowsJson("flows_jsonplaceholder_posts.json");
+static final NodeRedContainer nodeRedContainer = new NodeRedContainer()
+        .withFlowsJson("flows_jsonplaceholder_posts.json")
+        .withFlowsCredJson("flows_cred.json")
+        .withNodeRedCredentialSecret("MY_NODE_RED_CREDENTIAL_SECRET");
 ```
 
 You can obtain several properties form the NODE-RED container:
@@ -35,7 +39,7 @@ You can obtain several properties form the NODE-RED container:
 ```java
 String endpoint = nodeRedContainer.getNodeRedUrl();
 ```
-See also [`NodeRedContainerTest`](./src/test/java/io/github/jsoladur/nodered/NodeRedContainerTest.java) class.
+See also [`NodeRedContainerTest`](./src/test/java/io/github/jsoladur/nodered/NodeRedContainerTest.java) class and the other integration tests.
 
 ## Installation
 

@@ -81,7 +81,7 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
      * @return self container
      * @since 0.2.0
      */
-    public NodeRedContainer withFlowsCred(String flowsCred) {
+    public NodeRedContainer withFlowsCredJson(String flowsCred) {
         this.flowsCredJson = flowsCred;
         return self();
     }
