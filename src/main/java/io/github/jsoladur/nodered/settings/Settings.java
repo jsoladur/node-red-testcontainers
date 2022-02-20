@@ -1,10 +1,10 @@
-package io.github.jsoladur.nodered.vo;
+package io.github.jsoladur.nodered.settings;
 
 import lombok.*;
 
 import java.util.List;
 
-@Getter @Setter @Builder @AllArgsConstructor @NoArgsConstructor
+@Getter @Builder @NoArgsConstructor @AllArgsConstructor
 public class Settings {
 
     /**
@@ -19,6 +19,11 @@ public class Settings {
      */
     @Builder.Default
     private boolean flowFilePretty = true;
+    /**
+     * <p>TCP port that the Node-RED web server is listening on</p>
+     */
+    @Builder.Default
+    private Integer uiPort = 1880;
     /**
      * <p>The maximum size of HTTP request that will be accepted by the runtime api</p>
      */
@@ -72,51 +77,68 @@ public class Settings {
     private boolean disableEditor;
 
     /**
+     * <p>Customising the editor
+     * See <a href="https://nodered.org/docs/user-guide/runtime/configuration#editor-themes">https://nodered.org/docs/user-guide/runtime/configuration#editor-themes</a>
+     * for all available options.</p>
+     */
+    @Builder.Default
+    private EditorTheme editorTheme = EditorTheme.builder().build();
+
+    /**
      * <p>Allow the Function node to load additional npm modules directly</p>
      */
     @Builder.Default
     private boolean functionExternalModules = true;
+
     /**
-     * <p></p>
+     * <p>The maximum number of messages nodes will buffer internally as part of their
+     *    operation. This applies across a range of nodes that operate on message sequences.
+     *    defaults to no limit. A value of 0 also means no limit is applied.</p>
      */
     private Integer nodeMessageBufferMaxLength;
     /**
-     * <p></p>
+     * <p>The maximum length, in characters, of any message sent to the debug sidebar tab</p>
+     */
+    @Builder.Default
+    private Integer debugMaxLength = 1000;
+    /**
+     * <p>Maximum buffer size for the exec node. Defaults to 10M</p>
      */
     @Builder.Default
     private Long execMaxBufferSize = 10000000L;
     /**
-     * <p></p>
+     * <p>Timeout in milliseconds for HTTP request connections. Defaults to 120s</p>
      */
     @Builder.Default
     private Long httpRequestTimeout = 120000L;
     /**
-     * <p></p>
+     * <p>Retry time in milliseconds for MQTT connections</p>
      */
     @Builder.Default
     private Long mqttReconnectTime = 15000L;
     /**
-     * <p></p>
+     * <p>Retry time in milliseconds for Serial port connections</p>
      */
     @Builder.Default
     private Long serialReconnectTime = 15000L;
     /**
-     * <p></p>
+     * <p>Retry time in milliseconds for TCP socket connection</p>
      */
     @Builder.Default
     private Long socketReconnectTime = 10000L;
     /**
-     * <p></p>
+     * <p>Timeout in milliseconds for TCP server socket connections. Defaults to no timeout</p>
+     */
+    private Long socketTimeout;
+    /**
+     * <p>Maximum number of messages to wait in queue while attempting to connect to TCP socket
+     *    defaults to 1000</p>
      */
     @Builder.Default
-    private Long socketTimeout = 120000L;
+    private Long tcpMsgQueueSize = 1000L;
     /**
-     * <p></p>
-     */
-    @Builder.Default
-    private Long tcpMsgQueueSize = 2000L;
-    /**
-     * <p></p>
+     * <p>Timeout in milliseconds for inbound WebSocket connections that do not
+     *    match any configured node. Defaults to 5000</p>
      */
     @Builder.Default
     private Long inboundWebSocketTimeout = 5000L;
@@ -127,7 +149,7 @@ public class Settings {
     @Builder.Default
     private boolean tlsConfigDisableLocalFiles = true;
 
-    @Getter @Setter @Builder @AllArgsConstructor @NoArgsConstructor
+    @Getter @Builder
     public static class HttpNodeCors {
         @Builder.Default
         private String origin = "*";
@@ -135,13 +157,13 @@ public class Settings {
         private String methods = "GET,PUT,POST,DELETE";
     }
 
-    @Getter @Setter @Builder @AllArgsConstructor @NoArgsConstructor
+    @Getter @Builder
     public static class Logging {
 
         @Builder.Default
         private Console console = Console.builder().build();
 
-        @Getter @Setter @Builder @AllArgsConstructor @NoArgsConstructor
+        @Getter @Builder
         public static class Console {
             @Builder.Default
             private String level = "info";
@@ -150,7 +172,7 @@ public class Settings {
         }
     }
 
-    @Getter @Setter @Builder @AllArgsConstructor @NoArgsConstructor
+    @Getter @Builder
     public static class ExternalModules {
         private boolean autoInstall;
         private Integer autoInstallRetry;
@@ -159,7 +181,7 @@ public class Settings {
         @Builder.Default
         private Modules modules = Modules.builder().build();
 
-        @Getter @Setter @Builder @AllArgsConstructor @NoArgsConstructor
+        @Getter @Builder
         public static class Palette {
             /**
              * <p></p>
@@ -200,7 +222,7 @@ public class Settings {
 
         }
 
-        @Getter @Setter @Builder @AllArgsConstructor @NoArgsConstructor
+        @Getter @Builder
         public static class Modules {
             /**
              * <p></p>
@@ -217,6 +239,82 @@ public class Settings {
              */
             @Builder.Default
             private List<String> denyList = List.of();
+        }
+    }
+
+    @Getter @Builder
+    public static class EditorTheme {
+        private String theme;
+        private boolean tours;
+        @Builder.Default
+        private Palette palette = Palette.builder().build();
+        @Builder.Default
+        /**
+         * <p>To enable the Projects feature, set this value to true</p>
+         */
+        private Projects projects = Projects.builder().build();
+
+        @Getter @Builder
+        public static class Palette {
+            /**
+             * <p>The following property can be used to order the categories in the editor
+             * palette. If a node's category is not in the list, the category will get
+             * added to the end of the palette.
+             * If not set, the following default order is used:
+             * ['subflows', 'common', 'function', 'network', 'sequence', 'parser', 'storage']</p>
+             */
+            @Builder.Default
+            private List<String> categories = List.of("subflows", "common", "function", "network", "sequence", "parser", "storage");
+        }
+
+        @Getter @Builder
+        public static class Projects {
+            private boolean enabled;
+            @Builder.Default
+            private Workflow workflow = Workflow.builder().build();
+            @Builder.Default
+            private CodeEditor codeEditor = CodeEditor.builder().build();
+
+            @Getter @Builder
+            public static class Workflow {
+                /**
+                 * <p>Set the default projects workflow mode.
+                 *  - manual - you must manually commit changes
+                 *  - auto - changes are automatically committed
+                 * This can be overridden per-user from the 'Git config'
+                 * section of 'User Settings' within the editor</p>
+                 */
+                @Builder.Default
+                private String mode = "manual";
+
+            }
+
+            @Getter @Builder
+            public static class CodeEditor {
+                @Builder.Default
+                private String lib = "ace";
+                @Builder.Default
+                private Options options = Options.builder().build();
+
+                @Getter @Builder
+                public static class Options {
+                    /** <p>The follow options only apply if the editor is set to "monaco"
+                     *
+                     * theme - must match the file name of a theme in
+                     * packages/node_modules/@node-red/editor-client/src/vendor/monaco/dist/theme
+                     * e.g. "tomorrow-night", "upstream-sunburst", "github", "my-theme"</p>
+                     */
+                    @Builder.Default
+                    private String theme = "vs";
+                    /**
+                     * <p>other overrides can be set e.g. fontSize, fontFamily, fontLigatures etc.
+                     * for the full list, see <a href="https://microsoft.github.io/monaco-editor/api/interfaces/monaco.editor.istandaloneeditorconstructionoptions.html">https://microsoft.github.io/monaco-editor/api/interfaces/monaco.editor.istandaloneeditorconstructionoptions.html</a></p>
+                     */
+                    private Integer fontSize;
+                    private String fontFamily;
+                    private boolean fontLigatures;
+                }
+            }
         }
     }
 }

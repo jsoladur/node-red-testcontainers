@@ -1,5 +1,6 @@
 package io.github.jsoladur.nodered;
 
+import io.github.jsoladur.nodered.settings.Settings;
 import lombok.SneakyThrows;
 import org.apache.commons.compress.utils.IOUtils;
 import org.testcontainers.containers.GenericContainer;
@@ -24,7 +25,6 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
     private static final Duration DEFAULT_STARTUP_TIMEOUT = Duration.ofMinutes(1);
     private static final String FLOWS_JSON_FILE_NAME = "flows.json";
     private static final String FLOWS_CRED_JSON_FILE_NAME = "flows_cred.json";
-
     //TODO: Think about how code this feature (Nashorn¿?)...
     private static final String SETTINGS_JS_FILE_NAME = "settings.js";
 
@@ -35,6 +35,10 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
 
     private String flowsJson;
     private String flowsCredJson;
+
+    private String settingsJs;
+    private Settings settings;
+
     private String nodeRedCredentialSecret;
     private String nodeOptions;
     private Duration startupTimeout = DEFAULT_STARTUP_TIMEOUT;
@@ -99,6 +103,23 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
     }
 
     /**
+     * your settings file
+     * @see <a href="https://nodered.org/docs/getting-started/docker">Running NODE-RED under Docker</a>
+     * @param settingsJs settings.js file
+     * @return self container
+     * @since 0.2.0
+     */
+    public NodeRedContainer withSettingsJs(String settingsJs) {
+        this.settingsJs = settingsJs;
+        return self();
+    }
+
+    public NodeRedContainer withSettings(Settings settings) {
+        this.settings = settings;
+        return self();
+    }
+
+    /**
      * <p>Set value for NODE_OPTIONS env variable</p>
      * @see <a href="https://nodered.org/docs/getting-started/docker">Running NODE-RED under Docker</a>
      * @param nodeOptions NODE_OPTIONS env variable
@@ -157,6 +178,20 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
         return this.flowsCredJson != null && !this.flowsCredJson.isBlank();
     }
 
+    /**
+     * @return true if your settings file was set. Otherwise false
+     */
+    protected boolean hasSettingsJs() {
+        return this.settingsJs != null && !this.settingsJs.isBlank();
+    }
+
+    /**
+     * @return true Settings object property was set. Otherwise false
+     */
+    protected boolean hasSettings() {
+        return this.settings != null;
+    }
+
     @Override
     @SneakyThrows
     protected void configure() {
@@ -176,6 +211,9 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
     @Override
     @SneakyThrows
     protected void containerIsCreated(String containerId) {
+        if (this.hasSettingsJs() && this.hasSettings()) {
+            logger().warn("settingsJs file property and settings object property, both was set. The settings object will be ignored!");
+        }
         if (this.hasFlowsJson()) {
             try(final var is = this.getClass().getClassLoader().getResourceAsStream(this.flowsJson)){
                 copyFileToContainer(Transferable.of(IOUtils.toByteArray(is)), "/data/" + FLOWS_JSON_FILE_NAME);
@@ -185,6 +223,13 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
             try(final var is = this.getClass().getClassLoader().getResourceAsStream(this.flowsCredJson)){
                 copyFileToContainer(Transferable.of(IOUtils.toByteArray(is)), "/data/" + FLOWS_CRED_JSON_FILE_NAME);
             }
+        }
+        if (this.hasSettingsJs()) {
+            try(final var is = this.getClass().getClassLoader().getResourceAsStream(this.settingsJs)){
+                copyFileToContainer(Transferable.of(IOUtils.toByteArray(is)), "/data/" + SETTINGS_JS_FILE_NAME);
+            }
+        } else if (this.hasSettings()) {
+            // TODO: To be implemented
         }
     }
 
