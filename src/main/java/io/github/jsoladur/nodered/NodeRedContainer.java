@@ -1,14 +1,18 @@
 package io.github.jsoladur.nodered;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.jsoladur.nodered.internal.InternalSettings;
 import io.github.jsoladur.nodered.settings.Settings;
 import lombok.SneakyThrows;
 import org.apache.commons.compress.utils.IOUtils;
+import org.modelmapper.ModelMapper;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.images.builder.Transferable;
 import org.testcontainers.utility.DockerImageName;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 
@@ -33,11 +37,15 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
         private static final String NODE_OPTIONS = "NODE_OPTIONS";
     }
 
+    private final ModelMapper modelMapper;
+    private final ObjectMapper objectMapper;
+
     private String flowsJson;
     private String flowsCredJson;
 
     private String settingsJs;
     private Settings settings;
+    private boolean prettyPrintSettings;
 
     private String nodeRedCredentialSecret;
     private String nodeOptions;
@@ -64,6 +72,9 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
         }
         withExposedPorts(ALL_EXPOSED_PORTS.toArray(Integer[]::new));
         withLogConsumer(new Slf4jLogConsumer(logger()));
+        prettyPrintSettings = true;
+        modelMapper = new ModelMapper();
+        objectMapper = new ObjectMapper();
     }
 
     /**
@@ -114,8 +125,26 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
         return self();
     }
 
+    /**
+     * your settings.js file as object representation
+     * @see <a href="https://nodered.org/docs/getting-started/docker">Running NODE-RED under Docker</a>
+     * @param settings settings.js file as object representation
+     * @return self container
+     * @since 0.2.0
+     */
     public NodeRedContainer withSettings(Settings settings) {
         this.settings = settings;
+        return self();
+    }
+
+    /**
+     * Pretty print of settings.js file as object representation. 'true' is the default value
+     * @param prettyPrintSettings pretty print of settings.js file as object representation
+     * @return self container
+     * @since 0.2.0
+     */
+    public NodeRedContainer withPrettyPrintSettings(boolean prettyPrintSettings) {
+        this.prettyPrintSettings = prettyPrintSettings;
         return self();
     }
 
@@ -229,7 +258,12 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
                 copyFileToContainer(Transferable.of(IOUtils.toByteArray(is)), "/data/" + SETTINGS_JS_FILE_NAME);
             }
         } else if (this.hasSettings()) {
-            // TODO: To be implemented
+            final var internalSettings = modelMapper.map(settings, InternalSettings.class);
+            final String internalSettingsAsString = prettyPrintSettings ?
+                    objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(internalSettings) :
+                    objectMapper.writeValueAsString(internalSettings);
+            final String moduleExportsSettingsFile = String.format("module.exports = %1$2s", internalSettingsAsString);
+            copyFileToContainer(Transferable.of(moduleExportsSettingsFile.getBytes(StandardCharsets.UTF_8)), "/data/" + SETTINGS_JS_FILE_NAME);
         }
     }
 
