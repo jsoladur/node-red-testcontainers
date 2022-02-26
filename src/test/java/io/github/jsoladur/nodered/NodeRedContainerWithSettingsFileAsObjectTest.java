@@ -17,6 +17,9 @@ import org.testcontainers.shaded.okhttp3.Request;
 
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 @Slf4j
 @Testcontainers
 class NodeRedContainerWithSettingsFileAsObjectTest {
@@ -42,7 +45,7 @@ class NodeRedContainerWithSettingsFileAsObjectTest {
 
     @Test
     @SneakyThrows
-    void test() {
+    void postsHttpFlowsEndpointTest() {
         final var client = new OkHttpClient.Builder().build();
         Request request = new Request.Builder()
                 .url(nodeRedContainer.getNodeRedUrl() + "/posts")
@@ -50,6 +53,18 @@ class NodeRedContainerWithSettingsFileAsObjectTest {
         final var call = client.newCall(request);
         final var response = call.execute();
         final var postList = objectMapper.readValue(response.body().bytes(), new TypeReference<List<Posts>>() {});
-        Assertions.assertFalse(postList.isEmpty());
+        assertFalse(postList.isEmpty());
+    }
+
+    @Test
+    @SneakyThrows
+    void disableEditorSettingsTest() {
+        final var client = new OkHttpClient.Builder().build();
+        Request request = new Request.Builder()
+                .url(nodeRedContainer.getNodeRedUrl())
+                .build();
+        final var call = client.newCall(request);
+        final var response = call.execute();
+        assertTrue(response.code() == 404);
     }
 }

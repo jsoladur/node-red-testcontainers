@@ -225,8 +225,7 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
     @SneakyThrows
     protected void configure() {
         setWaitStrategy(Wait
-                .forHttp("/")
-                .forPort(DEFAULT_HTTP_EXPOSED_PORT)
+                .forHealthcheck()
                 .withStartupTimeout(startupTimeout)
         );
         if (this.nodeRedCredentialSecret != null && !this.nodeRedCredentialSecret.isBlank()) {
@@ -244,17 +243,17 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
             logger().warn("settingsJs file property and settings object property, both was set. The settings object will be ignored!");
         }
         if (this.hasFlowsJson()) {
-            try(final var is = this.getClass().getClassLoader().getResourceAsStream(this.flowsJson)){
+            try (final var is = this.getClass().getClassLoader().getResourceAsStream(this.flowsJson)) {
                 copyFileToContainer(Transferable.of(IOUtils.toByteArray(is)), "/data/" + FLOWS_JSON_FILE_NAME);
             }
         }
         if (this.hasFlowsCredJson()) {
-            try(final var is = this.getClass().getClassLoader().getResourceAsStream(this.flowsCredJson)){
+            try (final var is = this.getClass().getClassLoader().getResourceAsStream(this.flowsCredJson)) {
                 copyFileToContainer(Transferable.of(IOUtils.toByteArray(is)), "/data/" + FLOWS_CRED_JSON_FILE_NAME);
             }
         }
         if (this.hasSettingsJs()) {
-            try(final var is = this.getClass().getClassLoader().getResourceAsStream(this.settingsJs)){
+            try (final var is = this.getClass().getClassLoader().getResourceAsStream(this.settingsJs)) {
                 copyFileToContainer(Transferable.of(IOUtils.toByteArray(is)), "/data/" + SETTINGS_JS_FILE_NAME);
             }
         } else if (this.hasSettings()) {

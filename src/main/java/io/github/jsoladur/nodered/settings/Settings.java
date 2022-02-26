@@ -4,7 +4,7 @@ import lombok.*;
 
 import java.util.List;
 
-@Getter @Builder @NoArgsConstructor @AllArgsConstructor
+@Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor
 public class Settings {
 
     /**

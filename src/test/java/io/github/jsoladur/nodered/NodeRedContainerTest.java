@@ -16,6 +16,8 @@ import org.testcontainers.shaded.okhttp3.Request;
 
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+
 @Slf4j
 @Testcontainers
 class NodeRedContainerTest {
@@ -48,6 +50,6 @@ class NodeRedContainerTest {
         final var call = client.newCall(request);
         final var response = call.execute();
         final var postList = objectMapper.readValue(response.body().bytes(), new TypeReference<List<Posts>>() {});
-        Assertions.assertFalse(postList.isEmpty());
+        assertFalse(postList.isEmpty());
     }
 }
