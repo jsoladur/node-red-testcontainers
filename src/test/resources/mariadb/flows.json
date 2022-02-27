@@ -1,0 +1,99 @@
+[
+  {
+    "id": "f6f2187d.f17ca8",
+    "type": "tab",
+    "label": "Flow 1",
+    "disabled": false,
+    "info": ""
+  },
+  {
+    "id": "fd2dee197846e7ae",
+    "type": "MySQLdatabase",
+    "name": "",
+    "host": "host.docker.internal",
+    "port": "3306",
+    "db": "mysql",
+    "tz": "",
+    "charset": "UTF8"
+  },
+  {
+    "id": "9e7fe6731aeb2540",
+    "type": "mysql",
+    "z": "f6f2187d.f17ca8",
+    "mydb": "fd2dee197846e7ae",
+    "name": "",
+    "x": 510,
+    "y": 200,
+    "wires": [
+      [
+        "0b558ffa4805e7f0"
+      ]
+    ]
+  },
+  {
+    "id": "ce97ef01984623e9",
+    "type": "http in",
+    "z": "f6f2187d.f17ca8",
+    "name": "",
+    "url": "/test",
+    "method": "get",
+    "upload": false,
+    "swaggerDoc": "",
+    "x": 160,
+    "y": 200,
+    "wires": [
+      [
+        "5451fe76125f75d8"
+      ]
+    ]
+  },
+  {
+    "id": "5451fe76125f75d8",
+    "type": "function",
+    "z": "f6f2187d.f17ca8",
+    "name": "",
+    "func": "msg.topic = 'SELECT version() AS VERSION'\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 320,
+    "y": 200,
+    "wires": [
+      [
+        "9e7fe6731aeb2540"
+      ]
+    ]
+  },
+  {
+    "id": "8cb351f6088cad69",
+    "type": "http response",
+    "z": "f6f2187d.f17ca8",
+    "name": "",
+    "statusCode": "",
+    "headers": {},
+    "x": 810,
+    "y": 200,
+    "wires": []
+  },
+  {
+    "id": "0b558ffa4805e7f0",
+    "type": "function",
+    "z": "f6f2187d.f17ca8",
+    "name": "",
+    "func": "const [ version ] = msg.payload;\nnode.warn(version);\nmsg.payload = version;\nreturn msg;",
+    "outputs": 1,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 660,
+    "y": 200,
+    "wires": [
+      [
+        "8cb351f6088cad69"
+      ]
+    ]
+  }
+]

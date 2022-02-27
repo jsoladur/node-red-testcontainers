@@ -6,7 +6,6 @@ import io.github.jsoladur.nodered.helpers.dtos.Posts;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.junit.jupiter.Container;
@@ -25,7 +24,7 @@ class NodeRedContainerTest {
     @Container
     static final NodeRedContainer nodeRedContainer =
             new NodeRedContainer()
-                    .withFlowsJson("flows_jsonplaceholder_posts.json")
+                    .withFlowsJson("jsonplaceholder/flows.json")
                     .withNodeOptions("--max-old-space-size=1024");
 
     private final ObjectMapper objectMapper = new ObjectMapper();

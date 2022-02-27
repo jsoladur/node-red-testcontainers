@@ -12,6 +12,16 @@ public class Settings {
      */
     @Builder.Default
     private String flowFile = "flows.json";
+
+    /**
+     * <p>By default, credentials are encrypted in storage using a generated key. To
+     * specify your own secret, set the following property.
+     * If you want to disable encryption of credentials, set this property to false.
+     * Note: once you set this property, do not change it - doing so will prevent
+     * node-red from being able to decrypt your existing credentials and they will be
+     * lost.</p>
+     */
+    private Object credentialSecret;
     /**
      * <p>By default, the flow JSON will be formatted over multiple lines making
      * it easier to compare changes when using version control.

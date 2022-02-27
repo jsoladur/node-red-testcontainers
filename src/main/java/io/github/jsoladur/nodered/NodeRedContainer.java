@@ -29,7 +29,6 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
     private static final Duration DEFAULT_STARTUP_TIMEOUT = Duration.ofMinutes(1);
     private static final String FLOWS_JSON_FILE_NAME = "flows.json";
     private static final String FLOWS_CRED_JSON_FILE_NAME = "flows_cred.json";
-    //TODO: Think about how code this feature (Nashorn¿?)...
     private static final String SETTINGS_JS_FILE_NAME = "settings.js";
 
     private static final class Env {

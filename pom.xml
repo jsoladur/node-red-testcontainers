@@ -61,6 +61,7 @@
         <lombok.version>1.18.22</lombok.version>
         <logback-classic.version>1.2.10</logback-classic.version>
         <okhttp.version>2.7.5</okhttp.version>
+        <mariadb-java-client.version>3.0.3</mariadb-java-client.version>
         <!-- Plugins -->
         <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
         <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
@@ -133,6 +134,17 @@
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>mariadb</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mariadb.jdbc</groupId>
+            <artifactId>mariadb-java-client</artifactId>
+            <version>${mariadb-java-client.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

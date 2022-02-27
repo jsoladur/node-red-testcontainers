@@ -7,7 +7,6 @@ import io.github.jsoladur.nodered.settings.Settings;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.junit.jupiter.Container;
@@ -27,7 +26,7 @@ class NodeRedContainerWithSettingsFileAsObjectTest {
     @Container
     static final NodeRedContainer nodeRedContainer =
             new NodeRedContainer()
-                    .withFlowsJson("flows_jsonplaceholder_posts.json")
+                    .withFlowsJson("jsonplaceholder/flows.json")
                     .withSettings(Settings.builder().disableEditor(true).build())
                     .withNodeOptions("--max-old-space-size=1024");
 
