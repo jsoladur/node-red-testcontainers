@@ -1,7 +1,5 @@
 package io.github.jsoladur.nodered;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.jsoladur.nodered.helpers.dtos.Posts;
 import io.github.jsoladur.nodered.vo.Settings;
 import lombok.SneakyThrows;
@@ -11,6 +9,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.shaded.com.fasterxml.jackson.core.type.TypeReference;
+import org.testcontainers.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import org.testcontainers.shaded.okhttp3.OkHttpClient;
 import org.testcontainers.shaded.okhttp3.Request;
 
@@ -51,7 +51,7 @@ class NodeRedContainerWithSettingsFileAsObjectTest {
                 .build();
         final var call = client.newCall(request);
         final var response = call.execute();
-        final var postList = objectMapper.readValue(response.body().bytes(), new TypeReference<List<Posts>>() {});
+        final List<Posts> postList = objectMapper.readValue(response.body().bytes(), new TypeReference<List<Posts>>() {});
         assertFalse(postList.isEmpty());
     }
 

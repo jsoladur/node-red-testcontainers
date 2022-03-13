@@ -1,7 +1,7 @@
 package io.github.jsoladur.nodered;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.jsoladur.nodered.internal.InternalSettings;
+import io.github.jsoladur.nodered.internal.NodeRedCatalogue;
 import io.github.jsoladur.nodered.vo.Settings;
 import io.github.jsoladur.nodered.vo.ThirdPartyLibraryNodesDependency;
 import lombok.SneakyThrows;
@@ -12,13 +12,20 @@ import org.testcontainers.containers.Network;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.images.builder.Transferable;
+import org.testcontainers.shaded.com.fasterxml.jackson.core.type.TypeReference;
+import org.testcontainers.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
+import org.testcontainers.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+import org.testcontainers.shaded.okhttp3.OkHttpClient;
+import org.testcontainers.shaded.okhttp3.Request;
 import org.testcontainers.shaded.org.apache.commons.lang.ObjectUtils;
 import org.testcontainers.utility.DockerImageName;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author José María Sola Durán, https://github.com/jsoladur, @jsoladur
@@ -82,7 +89,7 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
         withLogConsumer(new Slf4jLogConsumer(logger()));
         prettyPrintSettings = true;
         modelMapper = new ModelMapper();
-        objectMapper = new ObjectMapper();
+        objectMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
     /**
@@ -314,11 +321,24 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
 
         if (!this.getThirdPartyLibraryNodesDependencies().isEmpty()) {
             // FIXME: To be implemented!
-            // TODO: 1.) HTTP Request to https://catalogue.nodered.org/catalogue.json
-            // TODO: 2.) Validate 3rd party dependencies, comparing there one with catalogue
-            // TODO: 3.) Rebuild file /data/.config.nodes.json with 3rd party libraries info
+            // XXX: 1.) HTTP Request to https://catalogue.nodered.org/catalogue.json
+            final var nodeRedCatalogue = getNodeRedCatalogue();
+            // XXX: 2.) Read file from container in /data/.config.nodes.json path
+            final var configNodesJsonAsMap = copyFileFromContainer("/data/.config.nodes.json", (is) ->
+                objectMapper.readValue(is, new TypeReference<Map<String, Object>>() {})
+            );
+            // TODO: 3.) Validate 3rd party dependencies, comparing there one with catalogue
+            // TODO: 4.) Rebuild file /data/.config.nodes.json with 3rd party libraries info
         }
     }
+
+    private NodeRedCatalogue getNodeRedCatalogue() throws IOException {
+        final var client = new OkHttpClient.Builder().build();
+        final var request = new Request.Builder().get().url(NODE_RED_CATALOGUE_URL).build();
+        final var responseBody = client.newCall(request).execute().body();
+        return objectMapper.readValue(responseBody.bytes(), NodeRedCatalogue.class);
+    }
+
 
     private void printLoggerWarnDisableFeature() {
         logger().warn("This feature is disabled in " + this.getClass().getName());

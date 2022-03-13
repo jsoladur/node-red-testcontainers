@@ -1,6 +1,5 @@
 package io.github.jsoladur.nodered;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.dockerjava.api.command.CreateContainerCmd;
 import io.github.jsoladur.nodered.helpers.dtos.MariaDBVersion;
 import io.github.jsoladur.nodered.vo.Settings;
@@ -14,6 +13,7 @@ import org.testcontainers.containers.MariaDBContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import org.testcontainers.shaded.okhttp3.OkHttpClient;
 import org.testcontainers.shaded.okhttp3.Request;
 import org.testcontainers.utility.DockerImageName;

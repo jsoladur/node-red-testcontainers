@@ -57,10 +57,8 @@
         <testcontainers-bom.version>1.16.3</testcontainers-bom.version>
         <!-- Dependencies -->
         <modelmapper.version>3.0.0</modelmapper.version>
-        <jackson-databind.version>2.13.1</jackson-databind.version>
         <lombok.version>1.18.22</lombok.version>
         <logback-classic.version>1.2.10</logback-classic.version>
-        <okhttp.version>2.7.5</okhttp.version>
         <mariadb-java-client.version>3.0.3</mariadb-java-client.version>
         <!-- Plugins -->
         <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
@@ -108,11 +106,6 @@
             <artifactId>modelmapper</artifactId>
             <version>${modelmapper.version}</version>
         </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>${jackson-databind.version}</version>
-        </dependency>
         <!-- Runtime/Provided dependencies -->
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -151,12 +144,6 @@
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
             <version>${logback-classic.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.squareup.okhttp</groupId>
-            <artifactId>okhttp</artifactId>
-            <version>${okhttp.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
