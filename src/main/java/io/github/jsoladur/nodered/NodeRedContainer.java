@@ -2,18 +2,22 @@ package io.github.jsoladur.nodered;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.jsoladur.nodered.internal.InternalSettings;
-import io.github.jsoladur.nodered.settings.Settings;
+import io.github.jsoladur.nodered.vo.Settings;
+import io.github.jsoladur.nodered.vo.ThirdPartyLibraryNodesDependency;
 import lombok.SneakyThrows;
 import org.apache.commons.compress.utils.IOUtils;
 import org.modelmapper.ModelMapper;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.Network;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.images.builder.Transferable;
+import org.testcontainers.shaded.org.apache.commons.lang.ObjectUtils;
 import org.testcontainers.utility.DockerImageName;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -31,6 +35,8 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
     private static final String FLOWS_CRED_JSON_FILE_NAME = "flows_cred.json";
     private static final String SETTINGS_JS_FILE_NAME = "settings.js";
 
+    private static final String NODE_RED_CATALOGUE_URL = "https://catalogue.nodered.org/catalogue.json";
+
     private static final class Env {
         private static final String NODE_RED_CREDENTIAL_SECRET = "NODE_RED_CREDENTIAL_SECRET";
         private static final String NODE_OPTIONS = "NODE_OPTIONS";
@@ -46,8 +52,11 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
     private Settings settings;
     private boolean prettyPrintSettings;
 
+    private List<ThirdPartyLibraryNodesDependency> thirdPartyLibraryNodesDependencies = Collections.unmodifiableList(List.of());
+
     private String nodeRedCredentialSecret;
     private String nodeOptions;
+
     private Duration startupTimeout = DEFAULT_STARTUP_TIMEOUT;
 
     /**
@@ -101,18 +110,6 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
     }
 
     /**
-     *
-     * @see <a href="https://nodered.org/docs/getting-started/docker">Running NODE-RED under Docker</a>
-     * @param nodeRedCredentialSecret NODE_RED_CREDENTIAL_SECRET env variable
-     * @return self container
-     * @since 0.1.0
-     */
-    public NodeRedContainer withNodeRedCredentialSecret(String nodeRedCredentialSecret) {
-        this.nodeRedCredentialSecret = nodeRedCredentialSecret;
-        return self();
-    }
-
-    /**
      * your settings file
      * @see <a href="https://nodered.org/docs/getting-started/docker">Running NODE-RED under Docker</a>
      * @param settingsJs settings.js file
@@ -148,6 +145,29 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
     }
 
     /**
+     *
+     * @see <a href="https://nodered.org/docs/getting-started/docker">Running NODE-RED under Docker</a>
+     * @param nodeRedCredentialSecret NODE_RED_CREDENTIAL_SECRET env variable
+     * @return self container
+     * @since 0.1.0
+     */
+    public NodeRedContainer withNodeRedCredentialSecret(String nodeRedCredentialSecret) {
+        this.nodeRedCredentialSecret = nodeRedCredentialSecret;
+        return self();
+    }
+
+    /**
+     * List of third party libraries dependencies that flows needs in runtime
+     * @param thirdPartyLibraryNodesDependencies
+     * @return self container
+     * @since 0.2.0
+     */
+    public NodeRedContainer withThirdPartyLibraryNodesDependencies(ThirdPartyLibraryNodesDependency... thirdPartyLibraryNodesDependencies) {
+        this.thirdPartyLibraryNodesDependencies = Collections.unmodifiableList(List.of(thirdPartyLibraryNodesDependencies));
+        return self();
+    }
+
+    /**
      * <p>Set value for NODE_OPTIONS env variable</p>
      * @see <a href="https://nodered.org/docs/getting-started/docker">Running NODE-RED under Docker</a>
      * @param nodeOptions NODE_OPTIONS env variable
@@ -178,6 +198,11 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
      */
     public String getNodeRedUrl() {
         return String.format("http://%1$2s:%2$2s", getContainerIpAddress(), getMappedPort(DEFAULT_HTTP_EXPOSED_PORT));
+    }
+
+    @Override
+    public NodeRedContainer withNetwork(Network network) {
+        return super.withNetwork(network);
     }
 
     @Override
@@ -220,6 +245,13 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
         return this.settings != null;
     }
 
+    /**
+     * @return thirdPartyLibraryNodesDependencies
+     */
+    protected List<ThirdPartyLibraryNodesDependency> getThirdPartyLibraryNodesDependencies() {
+        return thirdPartyLibraryNodesDependencies;
+    }
+
     @Override
     @SneakyThrows
     protected void configure() {
@@ -252,16 +284,39 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
             }
         }
         if (this.hasSettingsJs()) {
+            if (!this.getThirdPartyLibraryNodesDependencies().isEmpty()) {
+                logger().warn("Ensure that in your settings.js the attribute externalModules.autoInstall is true. Other case, 3rd party libraries won't be installed");
+            }
             try (final var is = this.getClass().getClassLoader().getResourceAsStream(this.settingsJs)) {
                 copyFileToContainer(Transferable.of(IOUtils.toByteArray(is)), "/data/" + SETTINGS_JS_FILE_NAME);
             }
-        } else if (this.hasSettings()) {
-            final var internalSettings = modelMapper.map(settings, InternalSettings.class);
+        } else if (this.hasSettings() || !this.getThirdPartyLibraryNodesDependencies().isEmpty()) {
+            final var internalSettings = modelMapper.map(ObjectUtils.defaultIfNull(settings, Settings.builder().build()), InternalSettings.class);
+            if (!this.getThirdPartyLibraryNodesDependencies().isEmpty()) {
+                logger().info("We have modified your settings object to ensure that 3rd party libraries will be installed");
+                final var originalExternalModules = internalSettings.getExternalModules();
+                internalSettings.setExternalModules(
+                        Settings.ExternalModules
+                                .builder()
+                                .autoInstall(true)
+                                .autoInstallRetry(originalExternalModules.getAutoInstallRetry())
+                                .palette(originalExternalModules.getPalette())
+                                .modules(originalExternalModules.getModules())
+                                .build()
+                );
+            }
             final String internalSettingsAsString = prettyPrintSettings ?
                     objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(internalSettings) :
                     objectMapper.writeValueAsString(internalSettings);
             final String moduleExportsSettingsFile = String.format("module.exports = %1$2s", internalSettingsAsString);
             copyFileToContainer(Transferable.of(moduleExportsSettingsFile.getBytes(StandardCharsets.UTF_8)), "/data/" + SETTINGS_JS_FILE_NAME);
+        }
+
+        if (!this.getThirdPartyLibraryNodesDependencies().isEmpty()) {
+            // FIXME: To be implemented!
+            // TODO: 1.) HTTP Request to https://catalogue.nodered.org/catalogue.json
+            // TODO: 2.) Validate 3rd party dependencies, comparing there one with catalogue
+            // TODO: 3.) Rebuild file /data/.config.nodes.json with 3rd party libraries info
         }
     }
 

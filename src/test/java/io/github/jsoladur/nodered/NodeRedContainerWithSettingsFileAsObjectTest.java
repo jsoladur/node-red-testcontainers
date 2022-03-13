@@ -3,7 +3,7 @@ package io.github.jsoladur.nodered;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.jsoladur.nodered.helpers.dtos.Posts;
-import io.github.jsoladur.nodered.settings.Settings;
+import io.github.jsoladur.nodered.vo.Settings;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterAll;

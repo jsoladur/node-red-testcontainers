@@ -1,6 +1,6 @@
 package io.github.jsoladur.nodered.internal;
 
-import io.github.jsoladur.nodered.settings.Settings;
+import io.github.jsoladur.nodered.vo.Settings;
 import lombok.*;
 
 import java.util.Map;

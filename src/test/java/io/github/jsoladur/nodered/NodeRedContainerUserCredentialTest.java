@@ -1,14 +1,17 @@
 package io.github.jsoladur.nodered;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.dockerjava.api.command.CreateContainerCmd;
 import io.github.jsoladur.nodered.helpers.dtos.MariaDBVersion;
-import io.github.jsoladur.nodered.settings.Settings;
+import io.github.jsoladur.nodered.vo.Settings;
+import io.github.jsoladur.nodered.vo.ThirdPartyLibraryNodesDependency;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.MariaDBContainer;
+import org.testcontainers.containers.Network;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.shaded.okhttp3.OkHttpClient;
@@ -21,29 +24,45 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @Testcontainers
 class NodeRedContainerUserCredentialTest {
 
+    static final String MARIA_DB_CONTAINER_NAME = "mariadb-8524a3c4-0e6e-419d-9f3e-f2dab71f40f4";
+    static final Network network = Network.newNetwork();
+
     @Container
     static final MariaDBContainer mariaDbContainer =
-            new MariaDBContainer(DockerImageName.parse("mariadb"))
-                    .withPassword("my_cool_secret");
-
+            (MariaDBContainer) new MariaDBContainer(DockerImageName.parse("mariadb"))
+                    .withPassword("my_cool_secret")
+                    .withNetwork(network)
+                    .withCreateContainerCmdModifier(cmd -> {
+                        CreateContainerCmd.class.cast(cmd).withName(MARIA_DB_CONTAINER_NAME);
+                    });
     @Container
     static final NodeRedContainer nodeRedContainer =
             new NodeRedContainer()
+                    .withThirdPartyLibraryNodesDependencies(
+                            ThirdPartyLibraryNodesDependency
+                                    .builder()
+                                    .name("node-red-node-mysql")
+                                    .version("1.0.1")
+                                    .build()
+                    )
                     .withSettings(Settings
                             .builder()
                             .externalModules(Settings.ExternalModules
                                     .builder()
                                     .autoInstall(true)
                                     .build())
-                            .credentialSecret("3f01f2979636b984e84eb5eb4ace598a3cf3737eb1ce5249e6d2ed4b925eabd8")
+                            .credentialSecret("c49f73806be83ebe2f10dadec4bdcfce42e3964b4b58ce36d01551e0c51926ea")
                             .disableEditor(false)
                             .build())
-                    .withFlowsJson("mariadb/flows.json");
+                    .withFlowsJson("mariadb/flows.json")
+                    .withFlowsCredJson("mariadb/flows_cred.json")
+                    .withNetwork(network);
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeAll
     static void beforeAll() {
+        log.info("Network used = {}", network.getId());
         log.info("NODE-RED url = {}", nodeRedContainer.getNodeRedUrl());
     }
 
