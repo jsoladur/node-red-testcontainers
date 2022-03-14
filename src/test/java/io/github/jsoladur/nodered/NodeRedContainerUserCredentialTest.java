@@ -41,7 +41,7 @@ class NodeRedContainerUserCredentialTest {
                     .withThirdPartyLibraryNodesDependencies(
                             ThirdPartyLibraryNodesDependency
                                     .builder()
-                                    .name("node-red-node-mysql")
+                                    .module("node-red-node-mysql")
                                     .version("1.0.1")
                                     .build()
                     )

@@ -1,9 +1,11 @@
 package io.github.jsoladur.nodered;
 
+import com.github.dockerjava.api.command.InspectContainerResponse;
 import io.github.jsoladur.nodered.internal.InternalSettings;
 import io.github.jsoladur.nodered.internal.NodeRedCatalogue;
 import io.github.jsoladur.nodered.vo.Settings;
 import io.github.jsoladur.nodered.vo.ThirdPartyLibraryNodesDependency;
+import lombok.NonNull;
 import lombok.SneakyThrows;
 import org.apache.commons.compress.utils.IOUtils;
 import org.modelmapper.ModelMapper;
@@ -12,7 +14,6 @@ import org.testcontainers.containers.Network;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.images.builder.Transferable;
-import org.testcontainers.shaded.com.fasterxml.jackson.core.type.TypeReference;
 import org.testcontainers.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
 import org.testcontainers.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import org.testcontainers.shaded.okhttp3.OkHttpClient;
@@ -20,12 +21,11 @@ import org.testcontainers.shaded.okhttp3.Request;
 import org.testcontainers.shaded.org.apache.commons.lang.ObjectUtils;
 import org.testcontainers.utility.DockerImageName;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
+import java.util.Objects;
 
 /**
  * @author José María Sola Durán, https://github.com/jsoladur, @jsoladur
@@ -59,7 +59,8 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
     private Settings settings;
     private boolean prettyPrintSettings;
 
-    private List<ThirdPartyLibraryNodesDependency> thirdPartyLibraryNodesDependencies = Collections.unmodifiableList(List.of());
+    private List<ThirdPartyLibraryNodesDependency> thirdPartyLibraryNodesDependencies = Collections.unmodifiableList(Collections.emptyList());
+    private boolean validateThirdPartyLibraryNodesDependencies;
 
     private String nodeRedCredentialSecret;
     private String nodeOptions;
@@ -87,7 +88,7 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
         }
         withExposedPorts(ALL_EXPOSED_PORTS.toArray(Integer[]::new));
         withLogConsumer(new Slf4jLogConsumer(logger()));
-        prettyPrintSettings = true;
+        prettyPrintSettings = validateThirdPartyLibraryNodesDependencies = true;
         modelMapper = new ModelMapper();
         objectMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
@@ -169,8 +170,22 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
      * @return self container
      * @since 0.2.0
      */
-    public NodeRedContainer withThirdPartyLibraryNodesDependencies(ThirdPartyLibraryNodesDependency... thirdPartyLibraryNodesDependencies) {
+    public NodeRedContainer withThirdPartyLibraryNodesDependencies(@NonNull ThirdPartyLibraryNodesDependency... thirdPartyLibraryNodesDependencies) {
+        if (thirdPartyLibraryNodesDependencies.length <= 0) {
+            throw new IllegalArgumentException("thirdPartyLibraryNodesDependencies must contains at least one 3rd party dependency");
+        }
         this.thirdPartyLibraryNodesDependencies = Collections.unmodifiableList(List.of(thirdPartyLibraryNodesDependencies));
+        return self();
+    }
+
+    /**
+     * Enable/disable validation of third party library nodes dependencies before create and run NODE-RED container
+     * @param validateThirdPartyLibraryNodesDependencies
+     * @return self container
+     * @since 0.2.0
+     */
+    public NodeRedContainer withValidateThirdPartyLibraryNodesDependencies(boolean validateThirdPartyLibraryNodesDependencies) {
+        this.validateThirdPartyLibraryNodesDependencies = validateThirdPartyLibraryNodesDependencies;
         return self();
     }
 
@@ -252,16 +267,10 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
         return this.settings != null;
     }
 
-    /**
-     * @return thirdPartyLibraryNodesDependencies
-     */
-    protected List<ThirdPartyLibraryNodesDependency> getThirdPartyLibraryNodesDependencies() {
-        return thirdPartyLibraryNodesDependencies;
-    }
-
     @Override
     @SneakyThrows
     protected void configure() {
+        validateThirdPartyLibraryNodesDependencies();
         setWaitStrategy(Wait
                 .forHealthcheck()
                 .withStartupTimeout(startupTimeout)
@@ -291,54 +300,51 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
             }
         }
         if (this.hasSettingsJs()) {
-            if (!this.getThirdPartyLibraryNodesDependencies().isEmpty()) {
-                logger().warn("Ensure that in your settings.js the attribute externalModules.autoInstall is true. Other case, 3rd party libraries won't be installed");
-            }
             try (final var is = this.getClass().getClassLoader().getResourceAsStream(this.settingsJs)) {
                 copyFileToContainer(Transferable.of(IOUtils.toByteArray(is)), "/data/" + SETTINGS_JS_FILE_NAME);
             }
-        } else if (this.hasSettings() || !this.getThirdPartyLibraryNodesDependencies().isEmpty()) {
+        } else if (this.hasSettings()) {
             final var internalSettings = modelMapper.map(ObjectUtils.defaultIfNull(settings, Settings.builder().build()), InternalSettings.class);
-            if (!this.getThirdPartyLibraryNodesDependencies().isEmpty()) {
-                logger().info("We have modified your settings object to ensure that 3rd party libraries will be installed");
-                final var originalExternalModules = internalSettings.getExternalModules();
-                internalSettings.setExternalModules(
-                        Settings.ExternalModules
-                                .builder()
-                                .autoInstall(true)
-                                .autoInstallRetry(originalExternalModules.getAutoInstallRetry())
-                                .palette(originalExternalModules.getPalette())
-                                .modules(originalExternalModules.getModules())
-                                .build()
-                );
-            }
             final String internalSettingsAsString = prettyPrintSettings ?
                     objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(internalSettings) :
                     objectMapper.writeValueAsString(internalSettings);
             final String moduleExportsSettingsFile = String.format("module.exports = %1$2s", internalSettingsAsString);
             copyFileToContainer(Transferable.of(moduleExportsSettingsFile.getBytes(StandardCharsets.UTF_8)), "/data/" + SETTINGS_JS_FILE_NAME);
         }
+    }
 
-        if (!this.getThirdPartyLibraryNodesDependencies().isEmpty()) {
-            // FIXME: To be implemented!
-            // XXX: 1.) HTTP Request to https://catalogue.nodered.org/catalogue.json
-            final var nodeRedCatalogue = getNodeRedCatalogue();
-            // XXX: 2.) Read file from container in /data/.config.nodes.json path
-            final var configNodesJsonAsMap = copyFileFromContainer("/data/.config.nodes.json", (is) ->
-                objectMapper.readValue(is, new TypeReference<Map<String, Object>>() {})
-            );
-            // TODO: 3.) Validate 3rd party dependencies, comparing there one with catalogue
-            // TODO: 4.) Rebuild file /data/.config.nodes.json with 3rd party libraries info
+    @Override
+    protected void containerIsStarted(InspectContainerResponse containerInfo, boolean reused) {
+        /*
+            FIXME: Install third party dependencies...
+            @see https://github.com/node-red/node-red-admin/blob/master/lib/commands/install.js
+         */
+        for (final var thirdPartyLibrary : thirdPartyLibraryNodesDependencies) {
+            // TODO
         }
     }
 
-    private NodeRedCatalogue getNodeRedCatalogue() throws IOException {
+    private void validateThirdPartyLibraryNodesDependencies() {
+        if (this.validateThirdPartyLibraryNodesDependencies) {
+            // XXX: 1.) HTTP Request to https://catalogue.nodered.org/catalogue.json
+            final var nodeRedCatalogueModules = getNodeRedCatalogueModules();
+            // XXX: 2.) Validate 3rd party dependencies, comparing there one with catalogue
+            for (final var thirdPartyLibrary : thirdPartyLibraryNodesDependencies) {
+                if (nodeRedCatalogueModules.stream().noneMatch(catalogueModule -> catalogueModule.getId().equals(thirdPartyLibrary.getModule()))){
+                    throw new IllegalStateException(String.format("%1$2s is a unknown library in NODE-RED Catalogue", thirdPartyLibrary.getModule()));
+                }
+            }
+        }
+    }
+
+    @SneakyThrows
+    private List<NodeRedCatalogue.Module> getNodeRedCatalogueModules() {
         final var client = new OkHttpClient.Builder().build();
         final var request = new Request.Builder().get().url(NODE_RED_CATALOGUE_URL).build();
         final var responseBody = client.newCall(request).execute().body();
-        return objectMapper.readValue(responseBody.bytes(), NodeRedCatalogue.class);
+        final var nodeRedCatalogue = objectMapper.readValue(responseBody.bytes(), NodeRedCatalogue.class);
+        return Objects.nonNull(nodeRedCatalogue.getModules()) ? nodeRedCatalogue.getModules() : Collections.emptyList();
     }
-
 
     private void printLoggerWarnDisableFeature() {
         logger().warn("This feature is disabled in " + this.getClass().getName());
