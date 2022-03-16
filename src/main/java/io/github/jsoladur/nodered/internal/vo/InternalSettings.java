@@ -1,4 +1,4 @@
-package io.github.jsoladur.nodered.internal;
+package io.github.jsoladur.nodered.internal.vo;
 
 import io.github.jsoladur.nodered.vo.Settings;
 import lombok.*;

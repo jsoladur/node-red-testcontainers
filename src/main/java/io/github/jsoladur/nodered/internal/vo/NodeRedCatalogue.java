@@ -1,4 +1,4 @@
-package io.github.jsoladur.nodered.internal;
+package io.github.jsoladur.nodered.internal.vo;
 
 import lombok.Getter;
 import lombok.Setter;

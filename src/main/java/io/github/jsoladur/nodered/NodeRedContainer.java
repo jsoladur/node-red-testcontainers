@@ -1,8 +1,9 @@
 package io.github.jsoladur.nodered;
 
 import com.github.dockerjava.api.command.InspectContainerResponse;
-import io.github.jsoladur.nodered.internal.InternalSettings;
-import io.github.jsoladur.nodered.internal.NodeRedCatalogue;
+import io.github.jsoladur.nodered.internal.helpers.NodeRedRestApiClient;
+import io.github.jsoladur.nodered.internal.vo.InternalSettings;
+import io.github.jsoladur.nodered.internal.vo.NodeRedCatalogue;
 import io.github.jsoladur.nodered.vo.Settings;
 import io.github.jsoladur.nodered.vo.ThirdPartyLibraryNodesDependency;
 import lombok.NonNull;
@@ -27,45 +28,29 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+import static io.github.jsoladur.nodered.utils.NodeRedConstants.*;
+
 /**
  * @author José María Sola Durán, https://github.com/jsoladur, @jsoladur
  */
 public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
 
-    private static final String DEFAULT_NODE_RED_DOCKER_IMAGE_BASE_NAME = "nodered/node-red";
-    private static final String DEFAULT_NODE_RED_DOCKER_IMAGE_VERSION = "latest";
-    private static final DockerImageName DEFAULT_DOCKER_IMAGE_NAME = DockerImageName.parse(DEFAULT_NODE_RED_DOCKER_IMAGE_BASE_NAME + ":" + DEFAULT_NODE_RED_DOCKER_IMAGE_VERSION);
-    private static final int DEFAULT_HTTP_EXPOSED_PORT = 1880;
-    private static final List<Integer> ALL_EXPOSED_PORTS = List.of(DEFAULT_HTTP_EXPOSED_PORT);
-    private static final Duration DEFAULT_STARTUP_TIMEOUT = Duration.ofMinutes(1);
-    private static final String FLOWS_JSON_FILE_NAME = "flows.json";
-    private static final String FLOWS_CRED_JSON_FILE_NAME = "flows_cred.json";
-    private static final String SETTINGS_JS_FILE_NAME = "settings.js";
-
-    private static final String NODE_RED_CATALOGUE_URL = "https://catalogue.nodered.org/catalogue.json";
-
-    private static final class Env {
-        private static final String NODE_RED_CREDENTIAL_SECRET = "NODE_RED_CREDENTIAL_SECRET";
-        private static final String NODE_OPTIONS = "NODE_OPTIONS";
-    }
-
-    private final ModelMapper modelMapper;
-    private final ObjectMapper objectMapper;
-
     private String flowsJson;
     private String flowsCredJson;
-
     private String settingsJs;
     private Settings settings;
     private boolean prettyPrintSettings;
-
     private List<ThirdPartyLibraryNodesDependency> thirdPartyLibraryNodesDependencies = Collections.unmodifiableList(Collections.emptyList());
     private boolean validateThirdPartyLibraryNodesDependencies;
-
     private String nodeRedCredentialSecret;
     private String nodeOptions;
-
     private Duration startupTimeout = DEFAULT_STARTUP_TIMEOUT;
+
+    private final OkHttpClient okHttpClient;
+    private final ModelMapper modelMapper;
+    private final ObjectMapper objectMapper;
+
+    private final NodeRedRestApiClient nodeRedRestApiClient;
 
     /**
      * <p>Create NodeRedContainer with <a href="https://hub.docker.com/r/nodered/node-red/">nodered/node-red:latest</a> docker image</p>
@@ -91,6 +76,8 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
         prettyPrintSettings = validateThirdPartyLibraryNodesDependencies = true;
         modelMapper = new ModelMapper();
         objectMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        okHttpClient = new OkHttpClient.Builder().build();
+        nodeRedRestApiClient = NodeRedRestApiClient.newInstance(this, okHttpClient, objectMapper);
     }
 
     /**
@@ -316,11 +303,11 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
     @Override
     protected void containerIsStarted(InspectContainerResponse containerInfo, boolean reused) {
         /*
-            FIXME: Install third party dependencies...
+            XXX: Install third party dependencies...
             @see https://github.com/node-red/node-red-admin/blob/master/lib/commands/install.js
          */
         for (final var thirdPartyLibrary : thirdPartyLibraryNodesDependencies) {
-            // TODO
+            nodeRedRestApiClient.installThirdPartyLibraryNodesDependency(thirdPartyLibrary);
         }
     }
 
@@ -339,9 +326,8 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
 
     @SneakyThrows
     private List<NodeRedCatalogue.Module> getNodeRedCatalogueModules() {
-        final var client = new OkHttpClient.Builder().build();
         final var request = new Request.Builder().get().url(NODE_RED_CATALOGUE_URL).build();
-        final var responseBody = client.newCall(request).execute().body();
+        final var responseBody = okHttpClient.newCall(request).execute().body();
         final var nodeRedCatalogue = objectMapper.readValue(responseBody.bytes(), NodeRedCatalogue.class);
         return Objects.nonNull(nodeRedCatalogue.getModules()) ? nodeRedCatalogue.getModules() : Collections.emptyList();
     }
