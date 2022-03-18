@@ -1,0 +1,99 @@
+[
+  {
+      "id": "f1ae83b2ca946da1",
+      "type": "tab",
+      "label": "Flow 1",
+      "disabled": false,
+      "info": ""
+  },
+  {
+      "id": "f42f9fadae58e4bd",
+      "type": "MySQLdatabase",
+      "name": "",
+      "host": "mariadb-8524a3c4-0e6e-419d-9f3e-f2dab71f40f4",
+      "port": "3306",
+      "db": "test",
+      "tz": "",
+      "charset": "UTF8"
+  },
+  {
+      "id": "b2227af805c6b651",
+      "type": "http in",
+      "z": "f1ae83b2ca946da1",
+      "name": "",
+      "url": "/test",
+      "method": "get",
+      "upload": false,
+      "swaggerDoc": "",
+      "x": 160,
+      "y": 200,
+      "wires": [
+          [
+              "888d692131839e2d"
+          ]
+      ]
+  },
+  {
+      "id": "888d692131839e2d",
+      "type": "function",
+      "z": "f1ae83b2ca946da1",
+      "name": "",
+      "func": "msg.topic = 'SELECT version() AS VERSION'\nreturn msg;",
+      "outputs": 1,
+      "noerr": 0,
+      "initialize": "",
+      "finalize": "",
+      "libs": [],
+      "x": 320,
+      "y": 200,
+      "wires": [
+          [
+              "df119345b3ebc921"
+          ]
+      ]
+  },
+  {
+      "id": "6583e9ab8410ff59",
+      "type": "http response",
+      "z": "f1ae83b2ca946da1",
+      "name": "",
+      "statusCode": "",
+      "headers": {},
+      "x": 810,
+      "y": 200,
+      "wires": []
+  },
+  {
+      "id": "2584a50d71350769",
+      "type": "function",
+      "z": "f1ae83b2ca946da1",
+      "name": "",
+      "func": "const [ version ] = msg.payload;\nnode.warn(version);\nmsg.payload = version;\nreturn msg;",
+      "outputs": 1,
+      "noerr": 0,
+      "initialize": "",
+      "finalize": "",
+      "libs": [],
+      "x": 660,
+      "y": 200,
+      "wires": [
+          [
+              "6583e9ab8410ff59"
+          ]
+      ]
+  },
+  {
+      "id": "df119345b3ebc921",
+      "type": "mysql",
+      "z": "f1ae83b2ca946da1",
+      "mydb": "f42f9fadae58e4bd",
+      "name": "",
+      "x": 510,
+      "y": 200,
+      "wires": [
+          [
+              "2584a50d71350769"
+          ]
+      ]
+  }
+]

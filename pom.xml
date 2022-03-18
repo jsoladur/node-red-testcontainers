@@ -6,7 +6,7 @@
 
     <groupId>io.github.jsoladur</groupId>
     <artifactId>node-red-testcontainers</artifactId>
-    <version>0.1.0</version>
+    <version>0.2.0</version>
 
     <name>NODE-RED Testcontainers</name>
     <description>A Testcontainers implementation for NODE-RED.</description>
@@ -56,10 +56,10 @@
         <junit-bom.version>5.8.2</junit-bom.version>
         <testcontainers-bom.version>1.16.3</testcontainers-bom.version>
         <!-- Dependencies -->
-        <jackson-databind.version>2.13.1</jackson-databind.version>
+        <modelmapper.version>3.0.0</modelmapper.version>
         <lombok.version>1.18.22</lombok.version>
         <logback-classic.version>1.2.10</logback-classic.version>
-        <okhttp.version>2.7.5</okhttp.version>
+        <mariadb-java-client.version>3.0.3</mariadb-java-client.version>
         <!-- Plugins -->
         <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
         <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
@@ -67,6 +67,7 @@
         <maven-javadoc-plugin.version>3.3.2</maven-javadoc-plugin.version>
         <maven-gpg-plugin.version>3.0.1</maven-gpg-plugin.version>
         <nexus-staging-maven-plugin.version>1.6.9</nexus-staging-maven-plugin.version>
+        <jacoco-maven-plugin.version>0.8.7</jacoco-maven-plugin.version>
         <!-- Project properties -->
         <!-- Java version -->
         <java.version>11</java.version>
@@ -101,6 +102,11 @@
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.modelmapper</groupId>
+            <artifactId>modelmapper</artifactId>
+            <version>${modelmapper.version}</version>
+        </dependency>
         <!-- Runtime/Provided dependencies -->
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -125,22 +131,20 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>mariadb</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mariadb.jdbc</groupId>
+            <artifactId>mariadb-java-client</artifactId>
+            <version>${mariadb-java-client.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
             <version>${logback-classic.version}</version>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>com.squareup.okhttp</groupId>
-            <artifactId>okhttp</artifactId>
-            <version>${okhttp.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>${jackson-databind.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -172,6 +176,26 @@
                         <version>${junit-bom.version}</version>
                     </dependency>
                 </dependencies>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco-maven-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <!-- attached to Maven test phase -->
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
