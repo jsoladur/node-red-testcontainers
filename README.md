@@ -31,15 +31,54 @@ Power up a NODE-RED instance with existing `flows.json` and `flows_cred.json` fi
 static final NodeRedContainer nodeRedContainer = new NodeRedContainer()
         .withFlowsJson("flows_jsonplaceholder_posts.json")
         .withFlowsCredJson("flows_cred.json")
-        .withNodeRedCredentialSecret("MY_NODE_RED_CREDENTIAL_SECRET");
+        .withSettings(Settings
+                            .builder()
+                            .credentialSecret(MY_NODE_RED_CREDENTIAL_SECRET)
+                            .build());
 ```
 
-You can obtain several properties form the NODE-RED container:
+Power up a NODE-RED instance with a `flows.json` witch need a external 3rd party library modules have been installed at boostrapping instant. Even, you can combine NODE-RED container with other containers wich are also power up with Testcontainers
+
+```java
+@Container
+static final MariaDBContainer mariaDbContainer =
+        new MariaDBContainer(DockerImageName.parse("mariadb"))
+                .withPassword("my_cool_secret")
+                .withNetwork(network)
+                .withCreateContainerCmdModifier(cmd -> {
+                    cmd.withName(MARIA_DB_CONTAINER_NAME);
+                });
+@Container
+static final NodeRedContainer nodeRedContainer =
+        new NodeRedContainer()
+                .withThirdPartyLibraryNodesDependencies(
+                        ThirdPartyLibraryNodesDependency
+                                .builder()
+                                .module("node-red-node-mysql")
+                                .version("1.0.1")
+                                .build()
+                )
+                .withSettings(Settings
+                        .builder()
+                        .externalModules(Settings.ExternalModules
+                                .builder()
+                                .autoInstall(true)
+                                .build())
+                        .credentialSecret(MY_NODE_RED_CREDENTIAL_SECRET)
+                        .disableEditor(true)
+                        .build())
+                .withFlowsJson("mariadb/flows.json")
+                .withFlowsCredJson("mariadb/flows_cred.json")
+                .withNetwork(network);
+```
+
+Finally, you can obtain several properties from the NODE-RED container:
 
 ```java
 String endpoint = nodeRedContainer.getNodeRedUrl();
 ```
-See also [`NodeRedContainerTest`](./src/test/java/io/github/jsoladur/nodered/NodeRedContainerTest.java) class and the other integration tests.
+
+See also [`NodeRedContainerTest`](./src/test/java/io/github/jsoladur/nodered/NodeRedContainerTest.java) and [`NodeRedContainerThirdPartyLibraryNodesDependenciesTest`](./src/test/java/io/github/jsoladur/nodered/NodeRedContainerThirdPartyLibraryNodesDependenciesTest.java) classes and the other integration tests.
 
 ## Installation
 
