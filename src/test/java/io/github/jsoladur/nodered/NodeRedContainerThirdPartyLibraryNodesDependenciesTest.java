@@ -38,6 +38,7 @@ class NodeRedContainerThirdPartyLibraryNodesDependenciesTest {
     @Container
     static final NodeRedContainer nodeRedContainer =
             new NodeRedContainer()
+                    .dependsOn(mariaDbContainer)
                     .withThirdPartyLibraryNodesDependencies(
                             ThirdPartyLibraryNodesDependency
                                     .builder()
@@ -45,6 +46,7 @@ class NodeRedContainerThirdPartyLibraryNodesDependenciesTest {
                                     .version("1.0.1")
                                     .build()
                     )
+                    .withValidateThirdPartyLibraryNodesDependencies(true)
                     .withSettings(Settings
                             .builder()
                             .externalModules(Settings.ExternalModules

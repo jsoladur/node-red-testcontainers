@@ -13,8 +13,5 @@ public class NodeRedCatalogue {
     @Getter @Setter
     public static class Module {
         private String id;
-        private String version;
-        private List<String> types;
-        private String url;
     }
 }

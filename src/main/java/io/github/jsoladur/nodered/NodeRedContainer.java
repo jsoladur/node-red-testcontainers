@@ -23,10 +23,8 @@ import org.testcontainers.utility.DockerImageName;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static io.github.jsoladur.nodered.utils.NodeRedConstants.*;
 import static java.util.stream.Collectors.*;
@@ -78,7 +76,7 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
         modelMapper = new ModelMapper();
         objectMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         okHttpClient = new OkHttpClient.Builder().build();
-        nodeRedRestApiClient = NodeRedRestApiClient.newInstance(this, okHttpClient, objectMapper);
+        nodeRedRestApiClient = new NodeRedRestApiClient(this, okHttpClient, objectMapper);
     }
 
     /**
@@ -168,7 +166,8 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
                 .collect(groupingBy(ThirdPartyLibraryNodesDependency::getModule, counting()))
                 .entrySet().stream().filter(entry -> entry.getValue() > 1).map(Map.Entry::getKey).collect(toList());
         if (!repeatModules.isEmpty()) {
-            throw new IllegalArgumentException(String.format("thirdPartyLibraryNodesDependencies contains the next duplicates libraries: %1$2s", String.join(", ", repeatModules)));
+            throw new IllegalArgumentException(String
+                    .format("thirdPartyLibraryNodesDependencies contains the next duplicates libraries: %1$2s", String.join(", ", repeatModules)));
         }
         return self();
     }
@@ -267,7 +266,9 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
     protected void configure() {
         validateThirdPartyLibraryNodesDependencies();
         setWaitStrategy(Wait
-                .forHealthcheck()
+                .forHttp("/")
+                .forPort(DEFAULT_HTTP_EXPOSED_PORT)
+                .forStatusCodeMatching(code -> code >= 200 && code < 500)
                 .withStartupTimeout(startupTimeout)
         );
         if (this.nodeRedCredentialSecret != null && !this.nodeRedCredentialSecret.isBlank()) {
@@ -313,6 +314,7 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
 
     @Override
     protected void containerIsStarted(InspectContainerResponse containerInfo, boolean reused) {
+        logger().debug("The NODE-RED container name is '{}'", containerInfo.getName());
         // XXX: Install third party dependencies...
         // @see https://github.com/node-red/node-red-admin/blob/master/lib/commands/install.js
         for (final var thirdPartyLibrary : thirdPartyLibraryNodesDependencies) {
