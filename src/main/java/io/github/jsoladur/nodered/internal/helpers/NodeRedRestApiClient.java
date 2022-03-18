@@ -19,10 +19,8 @@ import java.util.Objects;
 
 import static io.github.jsoladur.nodered.utils.NodeRedConstants.NODE_RED_CATALOGUE_URL;
 
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
+@RequiredArgsConstructor
 public class NodeRedRestApiClient {
-
-    private static NodeRedRestApiClient INSTANCE;
 
     private final NodeRedContainer nodeRedContainer;
     private final OkHttpClient okHttpClient;
@@ -55,12 +53,5 @@ public class NodeRedRestApiClient {
         final var responseBody = okHttpClient.newCall(request).execute().body();
         final var nodeRedCatalogue = objectMapper.readValue(responseBody.bytes(), NodeRedCatalogue.class);
         return Objects.nonNull(nodeRedCatalogue.getModules()) ? nodeRedCatalogue.getModules() : Collections.emptyList();
-    }
-
-    public static final NodeRedRestApiClient newInstance(final NodeRedContainer nodeRedContainer, final OkHttpClient okHttpClient, final ObjectMapper objectMapper) {
-        if (INSTANCE == null) {
-            INSTANCE = new NodeRedRestApiClient(nodeRedContainer, okHttpClient, objectMapper);
-        }
-        return INSTANCE;
     }
 }
