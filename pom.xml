@@ -6,7 +6,7 @@
 
     <groupId>io.github.jsoladur</groupId>
     <artifactId>node-red-testcontainers</artifactId>
-    <version>0.2.0-SNAPSHOT</version>
+    <version>0.2.0</version>
 
     <name>NODE-RED Testcontainers</name>
     <description>A Testcontainers implementation for NODE-RED.</description>
