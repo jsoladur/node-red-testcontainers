@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Slf4j
 @Testcontainers
-class NodeRedContainerUserCredentialTest {
+class NodeRedContainerThirdPartyLibraryNodesDependenciesTest {
 
     static final String MARIA_DB_CONTAINER_NAME = "mariadb-8524a3c4-0e6e-419d-9f3e-f2dab71f40f4";
     static final Network network = Network.newNetwork();

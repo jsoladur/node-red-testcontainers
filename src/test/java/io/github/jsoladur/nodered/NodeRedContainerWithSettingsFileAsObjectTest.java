@@ -28,6 +28,7 @@ class NodeRedContainerWithSettingsFileAsObjectTest {
             new NodeRedContainer()
                     .withFlowsJson("jsonplaceholder/flows.json")
                     .withSettings(Settings.builder().disableEditor(true).build())
+                    .withPrettyPrintSettings(false)
                     .withNodeOptions("--max-old-space-size=1024");
 
     private final ObjectMapper objectMapper = new ObjectMapper();

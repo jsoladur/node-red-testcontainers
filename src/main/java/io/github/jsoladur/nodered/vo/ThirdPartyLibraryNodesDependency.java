@@ -1,10 +1,10 @@
 package io.github.jsoladur.nodered.vo;
 
 import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NonNull;
 
-@Getter @Builder
+@Data @Builder
 public class ThirdPartyLibraryNodesDependency {
 
     @NonNull

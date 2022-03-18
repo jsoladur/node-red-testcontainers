@@ -3,7 +3,6 @@ package io.github.jsoladur.nodered;
 import com.github.dockerjava.api.command.InspectContainerResponse;
 import io.github.jsoladur.nodered.internal.helpers.NodeRedRestApiClient;
 import io.github.jsoladur.nodered.internal.vo.InternalSettings;
-import io.github.jsoladur.nodered.internal.vo.NodeRedCatalogue;
 import io.github.jsoladur.nodered.vo.Settings;
 import io.github.jsoladur.nodered.vo.ThirdPartyLibraryNodesDependency;
 import lombok.NonNull;
@@ -18,7 +17,6 @@ import org.testcontainers.images.builder.Transferable;
 import org.testcontainers.shaded.com.fasterxml.jackson.databind.DeserializationFeature;
 import org.testcontainers.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 import org.testcontainers.shaded.okhttp3.OkHttpClient;
-import org.testcontainers.shaded.okhttp3.Request;
 import org.testcontainers.shaded.org.apache.commons.lang.ObjectUtils;
 import org.testcontainers.utility.DockerImageName;
 
@@ -26,9 +24,12 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static io.github.jsoladur.nodered.utils.NodeRedConstants.*;
+import static java.util.stream.Collectors.*;
 
 /**
  * @author José María Sola Durán, https://github.com/jsoladur, @jsoladur
@@ -40,7 +41,7 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
     private String settingsJs;
     private Settings settings;
     private boolean prettyPrintSettings;
-    private List<ThirdPartyLibraryNodesDependency> thirdPartyLibraryNodesDependencies = Collections.unmodifiableList(Collections.emptyList());
+    private Set<ThirdPartyLibraryNodesDependency> thirdPartyLibraryNodesDependencies = Collections.unmodifiableSet(Collections.emptySet());
     private boolean validateThirdPartyLibraryNodesDependencies;
     private String nodeRedCredentialSecret;
     private String nodeOptions;
@@ -161,7 +162,14 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
         if (thirdPartyLibraryNodesDependencies.length <= 0) {
             throw new IllegalArgumentException("thirdPartyLibraryNodesDependencies must contains at least one 3rd party dependency");
         }
-        this.thirdPartyLibraryNodesDependencies = Collections.unmodifiableList(List.of(thirdPartyLibraryNodesDependencies));
+        this.thirdPartyLibraryNodesDependencies = Collections.unmodifiableSet(Set.of(thirdPartyLibraryNodesDependencies));
+        final var repeatModules = this.thirdPartyLibraryNodesDependencies
+                .stream()
+                .collect(groupingBy(ThirdPartyLibraryNodesDependency::getModule, counting()))
+                .entrySet().stream().filter(entry -> entry.getValue() > 1).map(Map.Entry::getKey).collect(toList());
+        if (!repeatModules.isEmpty()) {
+            throw new IllegalArgumentException(String.format("thirdPartyLibraryNodesDependencies contains the next duplicates libraries: %1$2s", String.join(", ", repeatModules)));
+        }
         return self();
     }
 
@@ -276,16 +284,19 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
         if (this.hasSettingsJs() && this.hasSettings()) {
             logger().warn("settingsJs file property and settings object property, both was set. The settings object will be ignored!");
         }
+        // flows.json
         if (this.hasFlowsJson()) {
             try (final var is = this.getClass().getClassLoader().getResourceAsStream(this.flowsJson)) {
                 copyFileToContainer(Transferable.of(IOUtils.toByteArray(is)), "/data/" + FLOWS_JSON_FILE_NAME);
             }
         }
+        // flows_cred.json
         if (this.hasFlowsCredJson()) {
             try (final var is = this.getClass().getClassLoader().getResourceAsStream(this.flowsCredJson)) {
                 copyFileToContainer(Transferable.of(IOUtils.toByteArray(is)), "/data/" + FLOWS_CRED_JSON_FILE_NAME);
             }
         }
+        // Inject settings.js into container
         if (this.hasSettingsJs()) {
             try (final var is = this.getClass().getClassLoader().getResourceAsStream(this.settingsJs)) {
                 copyFileToContainer(Transferable.of(IOUtils.toByteArray(is)), "/data/" + SETTINGS_JS_FILE_NAME);
@@ -302,10 +313,8 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
 
     @Override
     protected void containerIsStarted(InspectContainerResponse containerInfo, boolean reused) {
-        /*
-            XXX: Install third party dependencies...
-            @see https://github.com/node-red/node-red-admin/blob/master/lib/commands/install.js
-         */
+        // XXX: Install third party dependencies...
+        // @see https://github.com/node-red/node-red-admin/blob/master/lib/commands/install.js
         for (final var thirdPartyLibrary : thirdPartyLibraryNodesDependencies) {
             nodeRedRestApiClient.installThirdPartyLibraryNodesDependency(thirdPartyLibrary);
         }
@@ -314,7 +323,7 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
     private void validateThirdPartyLibraryNodesDependencies() {
         if (this.validateThirdPartyLibraryNodesDependencies) {
             // XXX: 1.) HTTP Request to https://catalogue.nodered.org/catalogue.json
-            final var nodeRedCatalogueModules = getNodeRedCatalogueModules();
+            final var nodeRedCatalogueModules = nodeRedRestApiClient.getNodeRedCatalogueModules();
             // XXX: 2.) Validate 3rd party dependencies, comparing there one with catalogue
             for (final var thirdPartyLibrary : thirdPartyLibraryNodesDependencies) {
                 if (nodeRedCatalogueModules.stream().noneMatch(catalogueModule -> catalogueModule.getId().equals(thirdPartyLibrary.getModule()))){
@@ -322,14 +331,6 @@ public class NodeRedContainer extends GenericContainer<NodeRedContainer> {
                 }
             }
         }
-    }
-
-    @SneakyThrows
-    private List<NodeRedCatalogue.Module> getNodeRedCatalogueModules() {
-        final var request = new Request.Builder().get().url(NODE_RED_CATALOGUE_URL).build();
-        final var responseBody = okHttpClient.newCall(request).execute().body();
-        final var nodeRedCatalogue = objectMapper.readValue(responseBody.bytes(), NodeRedCatalogue.class);
-        return Objects.nonNull(nodeRedCatalogue.getModules()) ? nodeRedCatalogue.getModules() : Collections.emptyList();
     }
 
     private void printLoggerWarnDisableFeature() {
